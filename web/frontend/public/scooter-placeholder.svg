@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" rx="24" fill="#F2F7FF"/>
+  <rect x="32" y="32" width="736" height="436" rx="20" fill="#E8F1FF" stroke="#BFD4F5" stroke-width="3" stroke-dasharray="10 10"/>
+  <circle cx="250" cy="370" r="52" fill="#2C6CD8"/>
+  <circle cx="250" cy="370" r="26" fill="white"/>
+  <circle cx="560" cy="370" r="52" fill="#2C6CD8"/>
+  <circle cx="560" cy="370" r="26" fill="white"/>
+  <path d="M302 362H505L545 280" stroke="#2C6CD8" stroke-width="20" stroke-linecap="round"/>
+  <path d="M302 362L360 230H492" stroke="#2C6CD8" stroke-width="20" stroke-linecap="round"/>
+  <rect x="515" y="208" width="82" height="30" rx="15" fill="#2C6CD8"/>
+  <text x="400" y="124" text-anchor="middle" fill="#2C6CD8" font-family="Arial, sans-serif" font-size="44" font-weight="700">Scooter Image</text>
+  <text x="400" y="166" text-anchor="middle" fill="#5B6E8E" font-family="Arial, sans-serif" font-size="24">Upload custom photo in Admin panel</text>
+</svg>
