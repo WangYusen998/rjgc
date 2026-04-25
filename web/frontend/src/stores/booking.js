@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAnalyticsStore } from '@/stores/analytics'
 import { useNotificationStore } from '@/stores/notifications'
 import { ApiError } from '@/utils/apiError'
+import { enrichScooter } from '@/utils/scooterCatalog'
 
 const baseHireOptions = [
   { key: '1h', label: '1 Hour', price: 4 },
@@ -41,7 +42,7 @@ export const useBookingStore = defineStore('booking', {
       try {
         const response = await bookingApi.listScooters()
         if (Array.isArray(response)) {
-          this.scooters = response
+          this.scooters = response.map(enrichScooter)
           return
         }
         this.scootersError = 'Unexpected scooter data format.'
@@ -144,20 +145,20 @@ export const useBookingStore = defineStore('booking', {
     },
 
     async setScooterAvailability(scooterId, available) {
-      this.scooters = await bookingApi.updateScooter(scooterId, { available })
+      this.scooters = (await bookingApi.updateScooter(scooterId, { available })).map(enrichScooter)
     },
 
     async setHourlyCost(scooterId, cost) {
-      this.scooters = await bookingApi.updateScooter(scooterId, { hourlyCost: cost })
+      this.scooters = (await bookingApi.updateScooter(scooterId, { hourlyCost: cost })).map(enrichScooter)
       useAnalyticsStore().hydrate()
     },
 
     async addScooter(payload) {
-      this.scooters = await bookingApi.addScooter(payload)
+      this.scooters = (await bookingApi.addScooter(payload)).map(enrichScooter)
     },
 
     async removeScooter(id) {
-      this.scooters = await bookingApi.removeScooter(id)
+      this.scooters = (await bookingApi.removeScooter(id)).map(enrichScooter)
     },
 
     toggleFavoriteScooter(id) {
@@ -173,7 +174,7 @@ export const useBookingStore = defineStore('booking', {
     },
 
     async setScooterImage(scooterId, imageUrl) {
-      this.scooters = await bookingApi.updateScooter(scooterId, { imageUrl })
+      this.scooters = (await bookingApi.updateScooter(scooterId, { imageUrl })).map(enrichScooter)
     },
 
     async loadBookingDetails(bookingId) {

@@ -120,30 +120,32 @@ function toggleStatus(user) {
 .panel,
 .card {
   border: 1px solid rgba(146,170,214,.3);
-  border-radius: 12px;
-  background: rgba(13,28,51,.72);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(14,29,54,.78), rgba(10,23,43,.72));
+  box-shadow: 0 18px 34px rgba(2, 10, 23, 0.16);
 }
 .head,
-.panel { padding: 16px; }
+.panel { padding: 18px; }
 h1 { margin: 0; }
 .head p { margin: 6px 0 0; color: #9fb3d1; }
 .stats-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.card { padding: 14px; }
+.card { padding: 16px; }
 .card span { color: #9fb3d1; font-size: 13px; }
 .card strong { display: block; margin-top: 4px; font-size: 24px; color: #fff; }
 .toolbar { display: grid; gap: 10px; grid-template-columns: 1.2fr 180px 180px; }
 input,
 select {
   border: 1px solid rgba(146,170,214,.35);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 12px 14px;
   background: rgba(6,19,40,.65);
   color: #e2e8f0;
 }
 .table-wrap { overflow: auto; }
-.table { width: 100%; border-collapse: collapse; min-width: 980px; }
+.table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 980px; }
 .table th,
-.table td { border: 1px solid rgba(146,170,214,.2); padding: 10px; text-align: left; color: #dce9ff; }
+.table td { border-bottom: 1px solid rgba(146,170,214,.14); padding: 14px 10px; text-align: left; color: #dce9ff; }
+.table th { color: #9fb3d1; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
 .table td strong { display: block; }
 .table td small { display: block; color: #9fb3d1; margin-top: 4px; }
 .badge {
@@ -157,13 +159,14 @@ select {
 .badge.ok { background: rgba(22,163,74,.18); color: #8ef0af; }
 .badge.warn { background: rgba(239,68,68,.18); color: #feb2b2; }
 .btn {
-  border: 1px solid #0b63d6;
-  border-radius: 8px;
-  padding: 7px 10px;
-  background: transparent;
-  color: #dce9ff;
+  border: 1px solid rgba(96,165,250,.34);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(59,130,246,.08));
+  color: #eff6ff;
   cursor: pointer;
 }
+.btn:hover:not(:disabled) { border-color: rgba(147,197,253,.5); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .empty-box { text-align: center; color: #b9cbe3; }
 .empty-box h3 { margin: 0; color: #f8fbff; }

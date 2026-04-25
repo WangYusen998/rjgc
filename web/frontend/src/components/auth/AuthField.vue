@@ -41,17 +41,26 @@ const emit = defineEmits(['update:modelValue'])
 }
 
 .input-wrap {
-  height: 44px;
+  min-height: 48px;
   border: 1px solid #d2dbea;
-  border-radius: 8px;
+  border-radius: 14px;
   display: grid;
   grid-template-columns: 42px 1fr;
   align-items: center;
-  background: #fff;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(247 250 255 / 94%));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 88%);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
 .input-wrap.is-error {
   border-color: #d93025;
+}
+
+.input-wrap:focus-within {
+  border-color: #5a9df0;
+  box-shadow: 0 0 0 4px rgb(22 114 216 / 10%);
+  background: #fff;
 }
 
 .icon {
@@ -62,8 +71,13 @@ const emit = defineEmits(['update:modelValue'])
 
 .input-wrap :deep(.ds-input) {
   border: 0;
-  padding: 0;
+  min-height: 48px;
+  height: 100%;
+  padding: 0 14px 0 8px;
   font-size: 16px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .field-error {
@@ -72,4 +86,3 @@ const emit = defineEmits(['update:modelValue'])
   font-size: 12px;
 }
 </style>
-

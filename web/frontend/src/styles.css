@@ -732,13 +732,40 @@ img {
 }
 
 .admin-brand {
-  height: 72px;
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 12px;
+  color: #ecf6ff;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  color: #ecf6ff;
-  font-size: 20px;
+  background: linear-gradient(180deg, rgb(37 99 235 / 32%), rgb(37 99 235 / 12%));
   font-family: "Space Grotesk", sans-serif;
   font-weight: 700;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.brand-copy strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.brand-copy small {
+  color: #9ab0d0;
+  font-size: 12px;
 }
 
 .admin-header {
@@ -770,6 +797,35 @@ img {
 .admin-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-date {
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: #c7d7ef;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgb(255 255 255 / 6%);
+}
+
+.admin-action-btn {
+  border-radius: 12px;
+  border-color: rgb(148 188 255 / 30%);
+  background: linear-gradient(180deg, rgb(37 99 235 / 24%), rgb(37 99 235 / 10%));
+  color: #eff6ff;
+}
+
+.admin-action-btn:hover {
+  color: #fff;
+  border-color: rgb(148 188 255 / 46%);
+  background: linear-gradient(180deg, rgb(37 99 235 / 32%), rgb(37 99 235 / 14%));
+}
+
+.admin-action-btn--ghost {
+  background: rgb(255 255 255 / 3%);
 }
 
 .admin-main {
@@ -792,6 +848,12 @@ img {
   border: 1px solid rgb(146 170 214 / 20%);
   background: rgb(13 28 51 / 70%);
   color: #e2e8f0;
+}
+
+.admin-main .el-tag.el-tag--primary {
+  background: linear-gradient(180deg, rgb(37 99 235 / 26%), rgb(37 99 235 / 14%));
+  border-color: rgb(148 188 255 / 26%);
+  color: #eaf2ff;
 }
 
 .admin-main .el-table,
@@ -885,6 +947,10 @@ img {
     flex-direction: column;
     align-items: flex-start;
     gap: 14px;
+  }
+
+  .admin-actions {
+    width: 100%;
   }
 
   .ds-grid-4 {

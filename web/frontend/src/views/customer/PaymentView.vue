@@ -1,5 +1,5 @@
 ﻿<script setup>
-import { reactive, computed } from 'vue'
+import { reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useBookingStore } from '@/stores/booking'
@@ -10,7 +10,12 @@ const booking = useBookingStore()
 
 const form = reactive({ cardNumber: '', expiry: '', cvv: '' })
 const pending = computed(() => booking.pendingBooking)
+const selectedScooter = computed(() => booking.scooters.find((item) => item.id === pending.value?.scooterId))
 const ui = reactive({ loading: false })
+
+onMounted(() => {
+  if (!booking.scooters.length) booking.hydrateScooters()
+})
 
 async function submitPayment() {
   if (!pending.value) {
@@ -54,6 +59,7 @@ async function submitPayment() {
     <article v-if="pending" class="summary ds-panel">
       <strong>{{ pending.scooterId }}</strong>
       <span>{{ pending.hireLabel }}</span>
+      <span v-if="selectedScooter" class="summary-meta">{{ selectedScooter.modelName }} · {{ selectedScooter.battery }}% battery at pickup</span>
       <b>GBP {{ pending.cost }}</b>
     </article>
 
@@ -76,6 +82,17 @@ async function submitPayment() {
         {{ ui.loading ? 'Processing...' : 'Pay Now' }}
       </button>
     </article>
+
+    <article v-if="selectedScooter" class="policy-card ds-panel">
+      <h2>Rental policy before payment</h2>
+      <ul>
+        <li>Unlock is completed by scanning the scooter QR code in the app.</li>
+        <li>Return is accepted only in approved bays: {{ selectedScooter.returnZones.join(', ') }}.</li>
+        <li>Late return reminders can lead to automatic card charges if the ride is still open.</li>
+        <li>Damage found at return can trigger an inspection fee and additional liability review.</li>
+        <li>{{ selectedScooter.insuranceNote }}</li>
+      </ul>
+    </article>
   </section>
 </template>
 
@@ -84,11 +101,27 @@ async function submitPayment() {
 .page-head { padding: 16px; }
 h1 { margin: 0; font-size: 30px; font-family: "Space Grotesk", sans-serif; }
 .page-head p { margin: 6px 0 0; color: #64748b; }
-.summary { border-color: #cde4ff; background: #edf5ff; padding: 12px; display: flex; gap: 12px; align-items: center; }
+.summary { border-color: #cde4ff; background: #edf5ff; padding: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.summary-meta { color: #51627b; font-size: 13px; }
 .panel { padding: 16px; display: grid; gap: 12px; }
 .field { display: grid; gap: 6px; }
 .row-2 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
 .primary-btn { width: fit-content; }
 .primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.policy-card {
+  padding: 16px;
+}
+.policy-card h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-family: "Space Grotesk", sans-serif;
+}
+.policy-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  display: grid;
+  gap: 8px;
+}
 @media (max-width: 680px) { .row-2 { grid-template-columns: 1fr; } }
 </style>

@@ -280,6 +280,8 @@ export async function registerDemoUser(payload) {
   const name = String(payload?.name || '').trim()
   const email = String(payload?.email || '').trim().toLowerCase()
   const password = String(payload?.password || '')
+  const cardNumber = String(payload?.cardNumber || '').replace(/\s+/g, '')
+  const billingPostcode = String(payload?.billingPostcode || '').trim().toUpperCase()
 
   if (!name || !email || !password) {
     throw new ApiError('Name, email and password are required.', { status: 400, code: 'INVALID_REGISTER' })
@@ -298,6 +300,8 @@ export async function registerDemoUser(payload) {
       role: 'customer',
       status: 'active',
       phone: '',
+      cardLast4: cardNumber.slice(-4),
+      billingPostcode,
       createdAt: new Date().toISOString(),
       lastLoginAt: '',
     })

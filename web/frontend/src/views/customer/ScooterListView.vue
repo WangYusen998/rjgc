@@ -14,6 +14,7 @@ const minPrice = ref('')
 const maxPrice = ref('')
 const sortBy = ref('newest')
 const visibleCount = ref(6)
+const previewId = ref('')
 
 onMounted(() => {
   booking.hydrateScooters()
@@ -39,6 +40,7 @@ const recentScooters = computed(() =>
     .filter(Boolean),
 )
 const availableCount = computed(() => booking.scooters.filter((item) => item.available).length)
+const previewScooter = computed(() => booking.scooters.find((item) => item.id === previewId.value))
 
 const filteredScooters = computed(() => {
   const min = minPrice.value === '' ? -Infinity : Number(minPrice.value)
@@ -47,6 +49,8 @@ const filteredScooters = computed(() => {
   const list = booking.scooters.filter((item) => {
     const keywordOk =
       item.id.toLowerCase().includes(search.value.toLowerCase()) ||
+      item.modelName.toLowerCase().includes(search.value.toLowerCase()) ||
+      item.description.toLowerCase().includes(search.value.toLowerCase()) ||
       item.location.toLowerCase().includes(search.value.toLowerCase())
     const locationOk = location.value === 'all' || item.location === location.value
     const availabilityOk =
@@ -96,6 +100,10 @@ function bookNow(id) {
 
 function toggleFavorite(id) {
   booking.toggleFavoriteScooter(id)
+}
+
+function openPreview(id) {
+  previewId.value = id
 }
 
 function viewDetails(id) {
@@ -193,7 +201,7 @@ function viewDetails(id) {
       <div class="card-grid">
         <article v-for="item in visibleScooters" :key="item.id" class="scooter-card">
           <div class="card-media">
-            <img :src="item.imageUrl || '/scooter-placeholder.svg'" :alt="`Scooter ${item.id}`" />
+            <img :src="item.imageUrl || '/scooter-placeholder.svg'" :alt="`Scooter ${item.id}`" @click="openPreview(item.id)" />
             <div class="media-overlay"></div>
             <div class="media-chip">{{ item.available ? 'Ready to ride' : 'Currently in use' }}</div>
           </div>
@@ -202,18 +210,29 @@ function viewDetails(id) {
             <div class="card-topline">
               <div>
                 <h3>{{ item.id }}</h3>
+                <p class="model-line">{{ item.modelName }}</p>
                 <p>{{ item.location }}</p>
               </div>
               <span :class="['ds-badge', item.available ? 'ds-badge-success' : 'ds-badge-muted']">{{ item.available ? 'Available' : 'In Use' }}</span>
             </div>
 
+            <p class="desc-line">{{ item.description }}</p>
+
             <div class="meta-row">
               <strong class="price">GBP {{ item.hourlyCost }}/hour</strong>
-              <span class="meta-hint">Flexible plans</span>
+              <span class="meta-hint">{{ item.batteryLabel }}</span>
+            </div>
+
+            <div class="spec-grid">
+              <span>{{ item.topSpeedMph }} mph</span>
+              <span>{{ item.estimatedRideMiles }} mi range</span>
+              <span>GPS {{ item.gpsStatus }}</span>
+              <span>{{ item.qrLabel }}</span>
             </div>
 
             <div class="card-actions">
               <button class="link-btn" @click="viewDetails(item.id)">View details</button>
+              <button class="link-btn" @click="openPreview(item.id)">Preview</button>
               <button class="link-btn" @click="toggleFavorite(item.id)">
                 {{ booking.favoriteScooterIds.includes(item.id) ? 'Unfavorite' : 'Favorite' }}
               </button>
@@ -237,6 +256,26 @@ function viewDetails(id) {
         <p v-else>All scooters loaded.</p>
       </footer>
     </div>
+
+    <ElDialog v-model="previewId" :model-value="Boolean(previewId)" width="min(760px, 94vw)" title="Scooter preview" @close="previewId = ''">
+      <template v-if="previewScooter">
+        <div class="preview-head">
+          <img :src="previewScooter.imageUrl" :alt="previewScooter.modelName" />
+          <div class="preview-copy">
+            <h2>{{ previewScooter.modelName }}</h2>
+            <p>{{ previewScooter.description }}</p>
+            <div class="spec-grid preview-body">
+              <span>{{ previewScooter.topSpeedMph }} mph top speed</span>
+              <span>{{ previewScooter.estimatedRideMiles }} mi estimated ride</span>
+              <span>{{ previewScooter.battery }}% battery</span>
+              <span>{{ previewScooter.odometerMiles }} mi odometer</span>
+              <span>{{ previewScooter.payloadKg }} kg payload</span>
+              <span>{{ previewScooter.returnZones.join(', ') }}</span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </ElDialog>
   </section>
 </template>
 
@@ -422,17 +461,22 @@ function viewDetails(id) {
 
 .card-media {
   position: relative;
+  height: 240px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 20% 20%, rgb(112 181 255 / 16%), transparent 28%),
     linear-gradient(180deg, #eef6ff, #e8f0fa);
   display: grid;
   place-items: center;
+  padding: 18px;
 }
 
 .card-media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  cursor: zoom-in;
 }
 
 .media-overlay {
@@ -484,6 +528,19 @@ function viewDetails(id) {
   color: #60708a;
 }
 
+.model-line {
+  font-size: 15px;
+  font-weight: 700;
+  color: #173257;
+}
+
+.desc-line {
+  margin: 0;
+  color: #51627b;
+  line-height: 1.45;
+  min-height: 44px;
+}
+
 .meta-row {
   display: flex;
   justify-content: space-between;
@@ -504,6 +561,21 @@ function viewDetails(id) {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.spec-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.spec-grid span {
+  border-radius: 12px;
+  background: #f4f8fc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
 }
 
 .card-actions {
@@ -546,6 +618,35 @@ function viewDetails(id) {
   margin: 0;
 }
 
+.preview-head {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 280px 1fr;
+  align-items: start;
+}
+
+.preview-head img {
+  width: 100%;
+  border-radius: 18px;
+  background: #eff6ff;
+}
+
+.preview-copy h2 {
+  margin: 0;
+  font-size: 28px;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.preview-copy p {
+  margin: 10px 0 0;
+  color: #51627b;
+  line-height: 1.55;
+}
+
+.preview-body {
+  margin-top: 14px;
+}
+
 @media (max-width: 1180px) {
   .scooters-page {
     grid-template-columns: 1fr;
@@ -578,6 +679,10 @@ function viewDetails(id) {
   .strip-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .preview-head {
+    grid-template-columns: 1fr;
   }
 }
 </style>
