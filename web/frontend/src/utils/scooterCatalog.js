@@ -2,6 +2,9 @@ const scooterCatalog = {
   'SC-101': {
     modelName: 'SwiftRide Urban 250',
     imageUrl: '/scooter-sc101.png',
+    imageFit: 'contain',
+    imagePosition: 'center bottom',
+    imageScale: 0.94,
     description: 'Compact city scooter for short commuter trips and campus travel.',
     topSpeedMph: 15.5,
     rangeMiles: 18,
@@ -15,6 +18,9 @@ const scooterCatalog = {
   'SC-102': {
     modelName: 'SwiftRide Urban 250',
     imageUrl: '/scooter-sc102.png',
+    imageFit: 'contain',
+    imagePosition: 'center bottom',
+    imageScale: 0.94,
     description: 'Compact city scooter for short commuter trips and campus travel.',
     topSpeedMph: 15.5,
     rangeMiles: 18,
@@ -28,6 +34,9 @@ const scooterCatalog = {
   'SC-103': {
     modelName: 'SwiftRide Tour 350',
     imageUrl: '/scooter-sc103.png',
+    imageFit: 'contain',
+    imagePosition: 'center bottom',
+    imageScale: 0.92,
     description: 'Longer-range model with stronger battery support for all-day rental.',
     topSpeedMph: 18,
     rangeMiles: 26,
@@ -41,6 +50,9 @@ const scooterCatalog = {
   'SC-104': {
     modelName: 'SwiftRide Tour 350',
     imageUrl: '/scooter-sc104.png',
+    imageFit: 'contain',
+    imagePosition: 'center bottom',
+    imageScale: 0.92,
     description: 'Longer-range model with stronger battery support for all-day rental.',
     topSpeedMph: 18,
     rangeMiles: 26,
@@ -54,6 +66,9 @@ const scooterCatalog = {
   'SC-105': {
     modelName: 'SwiftRide Cargo Lite',
     imageUrl: '/scooter-sc105.png',
+    imageFit: 'contain',
+    imagePosition: 'center center',
+    imageScale: 0.82,
     description: 'Stable utility scooter with basket mount for grocery and local errands.',
     topSpeedMph: 14,
     rangeMiles: 20,
@@ -67,6 +82,9 @@ const scooterCatalog = {
   'SC-106': {
     modelName: 'SwiftRide Cargo Lite',
     imageUrl: '/scooter-sc106.png',
+    imageFit: 'contain',
+    imagePosition: 'center bottom',
+    imageScale: 0.9,
     description: 'Stable utility scooter with basket mount for grocery and local errands.',
     topSpeedMph: 14,
     rangeMiles: 20,
@@ -82,6 +100,9 @@ const scooterCatalog = {
 const fallback = {
   modelName: 'SwiftRide Urban 250',
   imageUrl: '/scooter-urban-250.png',
+  imageFit: 'contain',
+  imagePosition: 'center bottom',
+  imageScale: 0.92,
   description: 'Electric scooter prepared for short-distance rental.',
   topSpeedMph: 15.5,
   rangeMiles: 18,

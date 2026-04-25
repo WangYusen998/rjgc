@@ -110,6 +110,14 @@ function viewDetails(id) {
   booking.markScooterViewed(id)
   router.push({ path: '/customer/map', query: { scooterId: id } })
 }
+
+function mediaStyle(item) {
+  return {
+    objectFit: item.imageFit || 'contain',
+    objectPosition: item.imagePosition || 'center bottom',
+    transform: `scale(${item.imageScale || 1})`,
+  }
+}
 </script>
 
 <template>
@@ -201,7 +209,12 @@ function viewDetails(id) {
       <div class="card-grid">
         <article v-for="item in visibleScooters" :key="item.id" class="scooter-card">
           <div class="card-media">
-            <img :src="item.imageUrl || '/scooter-placeholder.svg'" :alt="`Scooter ${item.id}`" @click="openPreview(item.id)" />
+            <img
+              :src="item.imageUrl || '/scooter-placeholder.svg'"
+              :alt="`Scooter ${item.id}`"
+              :style="mediaStyle(item)"
+              @click="openPreview(item.id)"
+            />
             <div class="media-overlay"></div>
             <div class="media-chip">{{ item.available ? 'Ready to ride' : 'Currently in use' }}</div>
           </div>
@@ -449,7 +462,7 @@ function viewDetails(id) {
   overflow: hidden;
   min-height: 410px;
   display: grid;
-  grid-template-rows: 220px 1fr;
+  grid-template-rows: 300px 1fr;
   box-shadow: 0 22px 34px rgb(21 37 63 / 7%);
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
@@ -461,22 +474,22 @@ function viewDetails(id) {
 
 .card-media {
   position: relative;
-  height: 240px;
+  height: 300px;
   overflow: hidden;
   background:
     radial-gradient(circle at 20% 20%, rgb(112 181 255 / 16%), transparent 28%),
     linear-gradient(180deg, #eef6ff, #e8f0fa);
   display: grid;
   place-items: center;
-  padding: 18px;
+  padding: 10px 10px 0;
 }
 
 .card-media img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center;
   cursor: zoom-in;
+  transition: transform 0.2s ease;
+  transform-origin: center bottom;
 }
 
 .media-overlay {
