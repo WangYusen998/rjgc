@@ -5,6 +5,8 @@ import { query } from './config/db.js'
 import authRoutes from './routes/auth.js'
 import scooterRoutes from './routes/scooters.js'
 import bookingRoutes from './routes/bookings.js'
+import adminRoutes from './routes/admin.js'
+import issueRoutes from './routes/issues.js'
 
 dotenv.config()
 
@@ -24,6 +26,8 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/scooters', scooterRoutes)
 app.use('/api/bookings', bookingRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/issues', issueRoutes)
 
 app.use((err, _req, res, _next) => {
   console.error(err)

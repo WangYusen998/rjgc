@@ -126,13 +126,15 @@ export function enrichScooter(scooter) {
     incomingImage.endsWith('.svg')
 
   return {
-    ...scooter,
     ...meta,
+    ...scooter,
     imageUrl: usesPlaceholder ? meta.imageUrl : incomingImage,
     battery,
-    batteryLabel,
-    estimatedRideMiles,
-    insuranceNote: 'By unlocking this scooter, riders confirm that they accept local road rules and public liability terms.',
-    returnRule: 'Return must be completed in an approved bay. Late return may trigger automatic card charging.',
+    batteryLabel: scooter.batteryLabel || batteryLabel,
+    estimatedRideMiles: scooter.estimatedRideMiles || estimatedRideMiles,
+    insuranceNote:
+      scooter.insuranceNote ||
+      'By unlocking this scooter, riders confirm that they accept local road rules and public liability terms.',
+    returnRule: scooter.returnRule || 'Return must be completed in an approved bay. Late return may trigger automatic card charging.',
   }
 }

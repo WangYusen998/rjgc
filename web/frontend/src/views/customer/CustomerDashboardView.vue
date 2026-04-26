@@ -9,7 +9,7 @@ const feedback = useFeedbackStore()
 onMounted(async () => {
   await booking.hydrateScooters()
   await booking.hydrateBookings()
-  feedback.hydrate()
+  await feedback.hydrate()
 })
 
 const stats = computed(() => ({

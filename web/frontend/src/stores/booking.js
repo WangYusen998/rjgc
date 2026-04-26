@@ -127,7 +127,7 @@ export const useBookingStore = defineStore('booking', {
 
       const notifications = useNotificationStore()
       notifications.push(`Payment successful. ${bookingId} is now active.`, 'success')
-      useAnalyticsStore().hydrate()
+      if (auth.user?.role === 'admin') await useAnalyticsStore().hydrate()
       return payment.booking || this.bookingById(bookingId)
     },
 
@@ -137,7 +137,7 @@ export const useBookingStore = defineStore('booking', {
       await this.hydrateScooters()
       const notifications = useNotificationStore()
       notifications.push(`Booking ${bookingId} cancelled.`, 'warning')
-      useAnalyticsStore().hydrate()
+      if (auth.user?.role === 'admin') await useAnalyticsStore().hydrate()
     },
 
     async extendBooking(bookingId) {
@@ -145,7 +145,7 @@ export const useBookingStore = defineStore('booking', {
       this.bookings = await bookingApi.extendBooking(bookingId, auth.user)
       const notifications = useNotificationStore()
       notifications.push(`Booking ${bookingId} extended by 1 hour.`, 'info')
-      useAnalyticsStore().hydrate()
+      if (auth.user?.role === 'admin') await useAnalyticsStore().hydrate()
     },
 
     async setScooterAvailability(scooterId, available) {
@@ -154,11 +154,12 @@ export const useBookingStore = defineStore('booking', {
 
     async setHourlyCost(scooterId, cost) {
       this.scooters = (await bookingApi.updateScooter(scooterId, { hourlyCost: cost })).map(enrichScooter)
-      useAnalyticsStore().hydrate()
+      const auth = useAuthStore()
+      if (auth.user?.role === 'admin') await useAnalyticsStore().hydrate()
     },
 
     async updateScooterOps(scooterId, changes) {
-      this.scooters = await bookingApi.updateScooter(scooterId, changes)
+      this.scooters = (await bookingApi.updateScooter(scooterId, changes)).map(enrichScooter)
     },
 
     async addScooter(payload) {

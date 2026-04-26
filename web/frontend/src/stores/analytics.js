@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getDemoRevenueSummary } from '@/services/demoData'
+import { httpRequest } from '@/api/http'
 
 export const useAnalyticsStore = defineStore('analytics', {
   state: () => ({
@@ -10,10 +10,10 @@ export const useAnalyticsStore = defineStore('analytics', {
     weeklyTotal: (state) => state.dailyIncome.reduce((acc, item) => acc + item.value, 0),
   },
   actions: {
-    hydrate() {
-      const summary = getDemoRevenueSummary()
-      this.weeklyIncomeByPlan = summary.weeklyIncomeByPlan
-      this.dailyIncome = summary.dailyIncome
+    async hydrate() {
+      const summary = await httpRequest('/admin/income')
+      this.weeklyIncomeByPlan = summary.weeklyIncomeByPlan || []
+      this.dailyIncome = summary.dailyIncome || []
     },
   },
 })

@@ -1,45 +1,46 @@
-import {
-  addDemoScooter,
-  cancelDemoBooking,
-  createDemoBooking,
-  extendDemoBooking,
-  getDemoBookingById,
-  listDemoBookings,
-  listDemoScooters,
-  payDemoBooking,
-  removeDemoScooter,
-  updateDemoScooter,
-} from '@/services/demoData'
+import { httpRequest } from '@/api/http'
 
 export const bookingApi = {
   listScooters() {
-    return Promise.resolve(listDemoScooters())
+    return httpRequest('/scooters')
   },
-  createBooking(payload, currentUser) {
-    return createDemoBooking(payload, currentUser)
+  createBooking(payload) {
+    return httpRequest('/bookings', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
-  payForBooking(bookingId, payload, currentUser) {
-    return payDemoBooking(bookingId, payload, currentUser)
+  payForBooking(bookingId, payload) {
+    return httpRequest(`/bookings/${bookingId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
-  listBookings(currentUser) {
-    return Promise.resolve(listDemoBookings(currentUser))
+  listBookings() {
+    return httpRequest('/bookings')
   },
-  getBookingById(bookingId, currentUser) {
-    return Promise.resolve(getDemoBookingById(bookingId, currentUser))
+  getBookingById(bookingId) {
+    return httpRequest(`/bookings/${bookingId}`)
   },
-  cancelBooking(bookingId, currentUser) {
-    return Promise.resolve(cancelDemoBooking(bookingId, currentUser))
+  cancelBooking(bookingId) {
+    return httpRequest(`/bookings/${bookingId}/cancel`, { method: 'POST' })
   },
-  extendBooking(bookingId, currentUser) {
-    return Promise.resolve(extendDemoBooking(bookingId, currentUser))
+  extendBooking(bookingId) {
+    return httpRequest(`/bookings/${bookingId}/extend`, { method: 'POST' })
   },
   addScooter(payload) {
-    return Promise.resolve(addDemoScooter(payload))
+    return httpRequest('/scooters', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
   updateScooter(scooterId, changes) {
-    return Promise.resolve(updateDemoScooter(scooterId, changes))
+    return httpRequest(`/scooters/${scooterId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(changes),
+    })
   },
   removeScooter(scooterId) {
-    return Promise.resolve(removeDemoScooter(scooterId))
+    return httpRequest(`/scooters/${scooterId}`, { method: 'DELETE' })
   },
 }

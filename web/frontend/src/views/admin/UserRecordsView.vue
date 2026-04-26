@@ -8,8 +8,8 @@ const search = ref('')
 const role = ref('all')
 const status = ref('all')
 
-onMounted(() => {
-  users.hydrate()
+onMounted(async () => {
+  await users.hydrate()
 })
 
 const filteredUsers = computed(() =>
@@ -18,7 +18,7 @@ const filteredUsers = computed(() =>
     const matchesKeyword =
       item.name.toLowerCase().includes(keyword) ||
       item.email.toLowerCase().includes(keyword) ||
-      item.id.toLowerCase().includes(keyword)
+      String(item.id).toLowerCase().includes(keyword)
     const matchesRole = role.value === 'all' || item.role === role.value
     const matchesStatus = status.value === 'all' || item.status === status.value
     return matchesKeyword && matchesRole && matchesStatus
@@ -32,9 +32,9 @@ const stats = computed(() => ({
   totalSpent: users.records.reduce((sum, item) => sum + Number(item.totalSpent || 0), 0),
 }))
 
-function toggleStatus(user) {
+async function toggleStatus(user) {
   const nextStatus = user.status === 'active' ? 'suspended' : 'active'
-  users.setStatus(user.id, nextStatus)
+  await users.setStatus(user.id, nextStatus)
   ElMessage.success(`${user.name} is now ${nextStatus}.`)
 }
 </script>

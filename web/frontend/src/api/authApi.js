@@ -1,10 +1,16 @@
-import { loginDemoUser, registerDemoUser } from '@/services/demoData'
+import { httpRequest } from '@/api/http'
 
 export const authApi = {
   register(payload) {
-    return registerDemoUser(payload)
+    return httpRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
   login(payload) {
-    return loginDemoUser(payload)
+    return httpRequest('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
 }

@@ -27,7 +27,7 @@ const quickTemplates = [
 
 onMounted(async () => {
   await booking.hydrateScooters()
-  feedback.hydrate()
+  await feedback.hydrate()
 })
 
 watch(
@@ -56,14 +56,14 @@ const visibleIssues = computed(() =>
   }),
 )
 
-function submitIssue() {
+async function submitIssue() {
   if (!form.message.trim()) {
     ElMessage.error('Please describe the issue.')
     return
   }
 
   const formatted = `[${form.category}] [${form.scooterId || 'N/A'}] ${form.message.trim()}`
-  feedback.addIssue({
+  await feedback.addIssue({
     message: formatted,
     priority: form.priority,
   })

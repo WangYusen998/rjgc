@@ -12,8 +12,8 @@ const range = ref('week')
 onMounted(async () => {
   await booking.hydrateScooters()
   await booking.hydrateBookings()
-  feedback.hydrate()
-  analytics.hydrate()
+  await feedback.hydrate()
+  await analytics.hydrate()
 })
 
 const stats = computed(() => ({

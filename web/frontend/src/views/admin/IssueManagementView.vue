@@ -6,19 +6,19 @@ import { useFeedbackStore } from '@/stores/feedback'
 const feedback = useFeedbackStore()
 const tab = ref('all')
 
-onMounted(() => {
-  feedback.hydrate()
+onMounted(async () => {
+  await feedback.hydrate()
 })
 
 const rows = computed(() => feedback.issues.filter((i) => tab.value === 'all' || i.status === tab.value))
 
-function setHigh(id) {
-  feedback.markHighPriority(id)
+async function setHigh(id) {
+  await feedback.markHighPriority(id)
   ElMessage.success('Issue marked as high priority.')
 }
 
-function resolve(id) {
-  feedback.resolveIssue(id)
+async function resolve(id) {
+  await feedback.resolveIssue(id)
   ElMessage.success('Issue resolved.')
 }
 </script>

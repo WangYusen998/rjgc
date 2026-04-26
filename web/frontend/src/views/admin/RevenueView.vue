@@ -6,8 +6,8 @@ const analytics = useAnalyticsStore()
 const period = ref('week')
 const maxDaily = computed(() => Math.max(...analytics.dailyIncome.map((item) => item.value), 1))
 
-onMounted(() => {
-  analytics.hydrate()
+onMounted(async () => {
+  await analytics.hydrate()
 })
 </script>
 
