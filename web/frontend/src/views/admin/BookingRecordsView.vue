@@ -34,6 +34,7 @@ const stats = computed(() => ({
   revenue: booking.bookings
     .filter((item) => item.status !== 'cancelled')
     .reduce((sum, item) => sum + Number(item.cost || 0), 0),
+  overdue: booking.bookings.reduce((sum, item) => sum + Number(item.overdueFee || 0), 0),
 }))
 
 async function extendRecord(record) {
@@ -71,6 +72,7 @@ async function cancelRecord(record) {
       <article class="card"><span>Active</span><strong>{{ stats.active }}</strong></article>
       <article class="card"><span>Cancelled</span><strong>{{ stats.cancelled }}</strong></article>
       <article class="card"><span>Revenue</span><strong>GBP {{ stats.revenue.toFixed(2) }}</strong></article>
+      <article class="card"><span>Overtime Fees</span><strong>GBP {{ stats.overdue.toFixed(2) }}</strong></article>
     </section>
 
     <section class="panel toolbar">
@@ -92,6 +94,8 @@ async function cancelRecord(record) {
               <th>Booking</th>
               <th>User</th>
               <th>Scooter</th>
+              <th>Mode / Return</th>
+              <th>Battery / Fees</th>
               <th>Status</th>
               <th>Cost</th>
               <th>Created</th>
@@ -111,6 +115,14 @@ async function cancelRecord(record) {
               <td>
                 <strong>{{ item.scooterId }}</strong>
                 <small>{{ item.scooterLocation }}</small>
+              </td>
+              <td>
+                <strong>{{ item.rentalMode || 'remote-pickup' }}</strong>
+                <small>{{ item.returnCheck || 'Return check pending' }}</small>
+              </td>
+              <td>
+                <strong>{{ item.pickupBattery ?? item.scooterBattery }}% -> {{ item.returnBattery ?? 'pending' }}</strong>
+                <small>Electricity GBP {{ item.energyCharge || 0 }} | Overtime GBP {{ item.overdueFee || 0 }}</small>
               </td>
               <td>
                 <span :class="['badge', item.status]">{{ item.status }}</span>
@@ -150,7 +162,7 @@ async function cancelRecord(record) {
 .panel { padding: 18px; }
 h1 { margin: 0; }
 .head p { margin: 6px 0 0; color: #9fb3d1; }
-.stats-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stats-grid { display: grid; gap: 10px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .card { padding: 16px; }
 .card span { color: #9fb3d1; font-size: 13px; }
 .card strong { display: block; margin-top: 4px; font-size: 24px; color: #fff; }
@@ -164,7 +176,7 @@ select {
   color: #e2e8f0;
 }
 .table-wrap { overflow: auto; }
-.table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1050px; }
+.table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1320px; }
 .table th,
 .table td { border-bottom: 1px solid rgba(146,170,214,.14); padding: 14px 10px; text-align: left; color: #dce9ff; }
 .table th { color: #9fb3d1; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }

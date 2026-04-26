@@ -54,6 +54,7 @@ const scootersForList = computed(() => {
 const selectedScooter = computed(() => booking.scooters.find((item) => item.id === selectedId.value))
 const availableCount = computed(() => booking.scooters.filter((item) => item.available).length)
 const inUseCount = computed(() => booking.scooters.filter((item) => !item.available).length)
+const chargingCount = computed(() => booking.scooters.filter((item) => item.battery < 35).length)
 const liveUpdatedText = computed(() =>
   liveUpdatedAt.value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
 )
@@ -98,6 +99,10 @@ function setMode(mode) {
             <small>In Use</small>
             <strong>{{ inUseCount }}</strong>
           </article>
+          <article>
+            <small>Need Charge</small>
+            <strong>{{ chargingCount }}</strong>
+          </article>
         </div>
       </header>
 
@@ -129,7 +134,7 @@ function setMode(mode) {
             <span :class="['ds-badge', item.available ? 'ds-badge-success' : 'ds-badge-muted']">{{ item.available ? 'Available' : 'In Use' }}</span>
           </div>
           <p>{{ item.location }}</p>
-          <small>GBP {{ item.hourlyCost }}/hour</small>
+          <small>Battery {{ item.battery }}% | {{ item.mileageKm || 0 }} km | GPS live</small>
         </article>
       </div>
       <div v-else class="ds-empty">
@@ -181,7 +186,15 @@ function setMode(mode) {
       <footer class="map-detail" v-if="selectedScooter">
         <div>
           <h3>{{ selectedScooter.id }} - {{ selectedScooter.location }}</h3>
-          <p>Price: GBP {{ selectedScooter.hourlyCost }}/hour</p>
+          <p>
+            Price: GBP {{ selectedScooter.hourlyCost }}/hour |
+            Battery: {{ selectedScooter.battery }}% |
+            Mileage: {{ selectedScooter.mileageKm || 0 }} km
+          </p>
+          <p>
+            Communication: {{ selectedScooter.communication || '4G module online' }} |
+            Return zones: {{ (selectedScooter.returnZones || [selectedScooter.location]).join(', ') }}
+          </p>
         </div>
         <div class="detail-actions">
           <button class="ds-btn ds-btn-secondary ds-btn-pill" @click="goDetails">View Details</button>
@@ -242,7 +255,7 @@ function setMode(mode) {
   margin-top: 10px;
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .quick-stats article {

@@ -9,6 +9,13 @@ const recommendation = computed(() => {
   if (options.length === 0) return null
   return options.reduce((best, item) => (item.price < best.price ? item : best), options[0])
 })
+
+const businessModes = [
+  { title: 'Sharing scooters', desc: 'Scan QR code, unlock by APP, live GPS and battery data sent by communication module, APP checks permitted return zone.' },
+  { title: 'Walk-in and rent', desc: 'Customer is registered by store clerk, credit card is bound, pickup and return battery levels are recorded.' },
+  { title: 'Remote rent, store pickup', desc: 'Reserve through web or APP, collect at store, return at store; overtime reminders and card auto-charge are supported.' },
+  { title: 'Safety responsibility', desc: 'Traffic insurance, helmet guidance, parking rules, vehicle damage checks and liability disclaimer are shown before payment.' },
+]
 </script>
 
 <template>
@@ -31,6 +38,13 @@ const recommendation = computed(() => {
       <h3>Budget Recommendation</h3>
       <p>Best entry plan: <b>{{ recommendation.label }}</b> (GBP {{ recommendation.price }})</p>
     </article>
+
+    <section class="mode-grid">
+      <article v-for="item in businessModes" :key="item.title" class="mode-card">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.desc }}</p>
+      </article>
+    </section>
   </section>
 </template>
 
@@ -48,6 +62,10 @@ h1 { margin: 0; font-size: 30px; font-family: "Space Grotesk", sans-serif; }
 .recommend { border: 1px solid #cde4ff; border-radius: 12px; background: #edf5ff; padding: 14px; }
 .recommend h3 { margin: 0; }
 .recommend p { margin: 6px 0 0; }
+.mode-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mode-card { border: 1px solid #d8e2ef; border-radius: 12px; background: #fff; padding: 16px; }
+.mode-card h3 { margin: 0; }
+.mode-card p { margin: 8px 0 0; color: #64748b; }
 @media (max-width: 1000px) { .option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 680px) { .option-grid { grid-template-columns: 1fr; } }
+@media (max-width: 680px) { .option-grid, .mode-grid { grid-template-columns: 1fr; } }
 </style>

@@ -139,6 +139,11 @@ watch(
               <strong>GBP {{ record.cost }}</strong>
               <small>Card ending {{ record.paymentLast4 || '----' }}</small>
             </article>
+            <article>
+              <span>Rental Mode</span>
+              <strong>{{ record.rentalMode }}</strong>
+              <small>{{ record.scooterCommunication }}</small>
+            </article>
           </div>
 
           <div class="action-row">
@@ -158,8 +163,15 @@ watch(
             <div><span>Planned Route</span><strong>{{ record.route || 'City route assigned at pickup' }}</strong></div>
             <div><span>Rate</span><strong>GBP {{ record.scooterRate }}/hour</strong></div>
             <div><span>User</span><strong>{{ record.userName }}</strong></div>
+            <div><span>Pickup Battery</span><strong>{{ record.pickupBattery ?? record.scooterBattery }}%</strong></div>
+            <div><span>Return Battery</span><strong>{{ record.returnBattery ?? 'Pending return' }}</strong></div>
+            <div><span>Electricity Difference</span><strong>GBP {{ record.energyCharge || 0 }}</strong></div>
+            <div><span>Overtime Fee</span><strong>GBP {{ record.overdueFee || 0 }}</strong></div>
           </div>
           <p class="note">{{ record.notes || 'No extra notes for this booking.' }}</p>
+          <p class="note">{{ record.returnCheck }}</p>
+          <p class="note">{{ record.damageStatus }}</p>
+          <p class="note">{{ record.insurance }}</p>
         </article>
       </section>
 

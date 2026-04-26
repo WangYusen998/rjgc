@@ -27,8 +27,19 @@ function resolve(id) {
   <section class="admin-page">
     <header class="head">
       <h1>Issue Management</h1>
-      <p>Prioritize and resolve customer-reported faults.</p>
+      <p>Prioritize customer-reported faults, damaged vehicles, and repair workflow after return inspection.</p>
     </header>
+
+    <section class="policy-panel">
+      <article>
+        <h2>Fault vehicle flow</h2>
+        <p>Open report -> mark high priority -> collect scooter -> inspect brakes, frame, battery and QR module -> return to deployed status after repair.</p>
+      </article>
+      <article>
+        <h2>Damage responsibility</h2>
+        <p>Return inspection records photos, staff note, battery level, and card preauthorization; intentional damage or illegal use can be charged to the user.</p>
+      </article>
+    </section>
 
     <article class="panel">
       <div class="tabs">
@@ -69,6 +80,10 @@ function resolve(id) {
 h1 { margin: 0; }
 .head p { margin: 6px 0 0; color: #9fb3d1; }
 .tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+.policy-panel { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.policy-panel article { border: 1px solid rgba(146,170,214,.3); border-radius: 12px; background: rgba(13,28,51,.72); padding: 14px; }
+.policy-panel h2 { margin: 0; font-size: 18px; }
+.policy-panel p { margin: 8px 0 0; color: #9fb3d1; }
 .tabs button { border: 1px solid rgba(146,170,214,.4); border-radius: 999px; background: transparent; color: #dce9ff; padding: 6px 10px; font-weight: 700; cursor: pointer; }
 .tabs button.active { background: #0b63d6; border-color: #0b63d6; }
 .table-wrap { overflow: auto; }
@@ -78,4 +93,5 @@ h1 { margin: 0; }
 .empty-box { border: 1px dashed rgba(146,170,214,.45); border-radius: 10px; padding: 20px; text-align: center; color: #b9cbe3; }
 .empty-box h3 { margin: 0; color: #e5eefb; }
 .empty-box p { margin: 8px 0 0; }
+@media (max-width: 760px) { .policy-panel { grid-template-columns: 1fr; } }
 </style>

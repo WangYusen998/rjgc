@@ -12,10 +12,10 @@ const featured = [
 ]
 
 const highlights = [
-  { title: 'Easy Booking', desc: 'Streamlined flow from scooter list to payment confirmation.' },
-  { title: 'Real-Time Map', desc: 'Location board with status indicators and quick actions.' },
-  { title: 'Manager Support', desc: 'Admin tools for fleet updates, issues, and revenue overview.' },
-  { title: 'Responsive UI', desc: 'Consistent experience on desktop and mobile layouts.' },
+  { title: 'Sharing scooters', desc: 'QR unlock, live GPS mileage, battery monitoring, APP return-zone validation, and automatic billing.' },
+  { title: 'Walk-in rent', desc: 'Store registration, credit card binding, pickup and return battery records, and damage inspection.' },
+  { title: 'Remote pickup', desc: 'Reserve on web or APP, collect at store, handle overtime reminders and automatic card charges.' },
+  { title: 'Safety liability', desc: 'Traffic insurance notice, parking rules, helmet guidance, and damage or illegal-use disclaimer.' },
 ]
 </script>
 
@@ -29,8 +29,9 @@ const highlights = [
           <RouterLink to="/customer/map" class="ds-btn ds-btn-secondary ds-btn-pill">Open Live Map</RouterLink>
         </div>
         <div class="hero-tags">
-          <span>5 Stations</span>
-          <span>Live Status</span>
+          <span>GPS + Battery</span>
+          <span>QR Unlock</span>
+          <span>Store Rental</span>
           <span>Manager Console</span>
         </div>
       </article>

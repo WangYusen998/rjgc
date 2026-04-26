@@ -241,6 +241,8 @@ function mediaStyle(item) {
               <span>{{ item.estimatedRideMiles }} mi range</span>
               <span>GPS {{ item.gpsStatus }}</span>
               <span>{{ item.qrLabel }}</span>
+              <span>{{ item.mileageKm || 0 }} km mileage</span>
+              <span>{{ item.communication || '4G module online' }}</span>
             </div>
 
             <div class="card-actions">

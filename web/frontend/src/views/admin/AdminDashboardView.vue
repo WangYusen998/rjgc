@@ -21,9 +21,18 @@ const stats = computed(() => ({
   active: booking.bookings.filter((b) => b.status === 'active').length,
   openIssues: feedback.issues.filter((i) => i.status === 'open').length,
   weekly: analytics.weeklyTotal,
+  charging: booking.scooters.filter((s) => s.battery < 35).length,
+  deployed: booking.scooters.filter((s) => s.opsStatus === 'deployed').length,
+  faults: booking.scooters.filter((s) => s.opsStatus === 'fault').length,
 }))
 const fleetMix = computed(() => booking.scooters.slice(0, 4))
 const priorityIssues = computed(() => feedback.issues.slice(0, 3))
+const operationCards = computed(() => [
+  { title: 'Automatic billing', desc: 'Orders combine base rental, service fee, battery difference, overtime fee, and card preauthorization.' },
+  { title: 'Charging management', desc: `${stats.value.charging} scooters are below 35% and should be collected for charging.` },
+  { title: 'Deployment / collection', desc: `${stats.value.deployed} scooters are deployed; staff assignments are managed in fleet configuration.` },
+  { title: 'Fault vehicles', desc: `${stats.value.faults} scooters are marked as fault or repair candidates and linked with customer issue reports.` },
+])
 </script>
 
 <template>
@@ -85,6 +94,13 @@ const priorityIssues = computed(() => feedback.issues.slice(0, 3))
         </div>
       </article>
     </section>
+
+    <section class="ops-grid">
+      <article v-for="item in operationCards" :key="item.title" class="ops-card">
+        <h2>{{ item.title }}</h2>
+        <p>{{ item.desc }}</p>
+      </article>
+    </section>
   </section>
 </template>
 
@@ -133,12 +149,17 @@ h1 { margin: 0; }
 .status-pill.ready { background: rgba(34,197,94,.16); color: #a7f3d0; }
 .status-pill.busy { background: rgba(244,114,182,.16); color: #fbcfe8; }
 .issue-meta { display: inline-block; margin-top: 10px; color: #7cb6ff; font-size: 12px; font-weight: 800; text-transform: capitalize; }
+.ops-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ops-card { border: 1px solid rgba(146,170,214,.3); border-radius: 18px; background: linear-gradient(180deg, rgba(14,29,54,.78), rgba(10,23,43,.72)); padding: 14px; }
+.ops-card h2 { margin: 0; font-size: 18px; }
+.ops-card p { margin: 8px 0 0; color: #9fb3d1; }
 @media (max-width: 1100px) {
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .insight-grid { grid-template-columns: 1fr; }
+  .ops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
-  .grid-4 { grid-template-columns: 1fr; }
+  .grid-4, .ops-grid { grid-template-columns: 1fr; }
   .head { flex-direction: column; align-items: flex-start; }
   .fleet-row { grid-template-columns: 1fr; }
 }

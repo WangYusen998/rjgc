@@ -81,7 +81,7 @@ export const useBookingStore = defineStore('booking', {
       await this.hydrateBookings()
     },
 
-    startBooking({ scooterId, hireKey }) {
+    startBooking({ scooterId, hireKey, rentalMode = 'remote-pickup' }) {
       const option = this.hireOptions.find((item) => item.key === hireKey)
       const scooter = this.scooters.find((item) => item.id === scooterId)
       const scooterRate = Number(scooter?.hourlyCost || option?.price || 4)
@@ -97,6 +97,9 @@ export const useBookingStore = defineStore('booking', {
         hireLabel: option?.label || 'Unknown',
         cost: Number((scooterRate * (priceMultiplier[hireKey] || 1)).toFixed(2)),
         hireKey,
+        rentalMode,
+        pickupBattery: scooter?.battery || 0,
+        modelName: scooter?.profileKey || 'city',
       }
       const notifications = useNotificationStore()
       notifications.push('Booking draft created.', 'info')
@@ -113,6 +116,7 @@ export const useBookingStore = defineStore('booking', {
       const created = await bookingApi.createBooking({
         scooterId: draft.scooterId,
         hireKey: draft.hireKey,
+        rentalMode: draft.rentalMode,
       }, auth.user)
       const bookingId = created.id || `BK-${Date.now()}`
       const payment = await bookingApi.payForBooking(bookingId, payload, auth.user)
@@ -151,6 +155,10 @@ export const useBookingStore = defineStore('booking', {
     async setHourlyCost(scooterId, cost) {
       this.scooters = (await bookingApi.updateScooter(scooterId, { hourlyCost: cost })).map(enrichScooter)
       useAnalyticsStore().hydrate()
+    },
+
+    async updateScooterOps(scooterId, changes) {
+      this.scooters = await bookingApi.updateScooter(scooterId, changes)
     },
 
     async addScooter(payload) {

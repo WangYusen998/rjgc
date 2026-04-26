@@ -10,6 +10,48 @@ const hireCatalog = {
   '1w': { label: '1 Week', multiplier: 27.5 },
 }
 
+const scooterProfiles = {
+  city: {
+    modelName: 'City Commuter',
+    description: 'Light urban scooter for short sharing trips, QR unlock, GPS parking checks and reliable daily commuting.',
+    topSpeedMph: 12,
+    estimatedRideMiles: 20,
+    payloadKg: 100,
+    motor: '350W hub motor',
+    deposit: 60,
+    energyRate: 0.28,
+  },
+  cargo: {
+    modelName: 'Cargo Plus',
+    description: 'Higher payload scooter for walk-in rental, store pickup checks, stronger braking and longer battery reserve.',
+    topSpeedMph: 11,
+    estimatedRideMiles: 28,
+    payloadKg: 130,
+    motor: '500W torque motor',
+    deposit: 90,
+    energyRate: 0.34,
+  },
+  sport: {
+    modelName: 'Sport Range',
+    description: 'Long-range rental model with responsive acceleration, extended battery and premium daily hire pricing.',
+    topSpeedMph: 15,
+    estimatedRideMiles: 34,
+    payloadKg: 110,
+    motor: '500W high efficiency motor',
+    deposit: 100,
+    energyRate: 0.38,
+  },
+}
+
+const scooterTelemetry = {
+  'SC-101': { profileKey: 'city', mileageKm: 1280, gps: { lat: 51.5072, lng: -0.1276 }, returnZones: ['Station A', 'Campus Gate'], opsStatus: 'in-use', assignedStaff: 'Liam Chen' },
+  'SC-102': { profileKey: 'city', mileageKm: 860, gps: { lat: 51.5101, lng: -0.1187 }, returnZones: ['Station B', 'Library Stop'], opsStatus: 'deployed', assignedStaff: 'Maya Patel' },
+  'SC-103': { profileKey: 'cargo', mileageKm: 2214, gps: { lat: 51.5145, lng: -0.1012 }, returnZones: ['Station C'], opsStatus: 'fault', assignedStaff: 'Owen Smith' },
+  'SC-104': { profileKey: 'city', mileageKm: 1476, gps: { lat: 51.5034, lng: -0.0921 }, returnZones: ['Station D', 'Riverside Park'], opsStatus: 'deployed', assignedStaff: 'Ella Wang' },
+  'SC-105': { profileKey: 'city', mileageKm: 994, gps: { lat: 51.5192, lng: -0.141 }, returnZones: ['Station E', 'Union Square'], opsStatus: 'deployed', assignedStaff: 'Noah Davis' },
+  'SC-106': { profileKey: 'sport', mileageKm: 412, gps: { lat: 51.5007, lng: -0.1246 }, returnZones: ['Station F', 'West Gate'], opsStatus: 'deployed', assignedStaff: 'Ava Brown' },
+}
+
 const defaultState = {
   users: [
     {
@@ -220,6 +262,37 @@ function createToken(user) {
   return `${header}.${payload}.demo-signature`
 }
 
+function normalizeScooter(scooter) {
+  const telemetry = { ...(scooterTelemetry[scooter.id] || {}), ...scooter }
+  const profileKey = telemetry.profileKey || 'city'
+  const profile = scooterProfiles[profileKey] || scooterProfiles.city
+  const battery = Math.max(0, Math.min(100, Number(telemetry.battery || 0)))
+  const mileageKm = Math.max(0, Number(telemetry.mileageKm || 0))
+
+  return {
+    ...telemetry,
+    ...profile,
+    profileKey,
+    battery,
+    mileageKm,
+    odometerMiles: Number((mileageKm * 0.621371).toFixed(0)),
+    batteryLabel: `${battery}% battery`,
+    gpsStatus: telemetry.gps ? `${telemetry.gps.lat}, ${telemetry.gps.lng}` : 'live',
+    qrLabel: 'QR unlock ready',
+    communication: telemetry.communication || '4G module online',
+    chargeStatus: telemetry.chargeStatus || (battery < 35 ? 'Needs charging' : battery < 70 ? 'Monitor' : 'Ready'),
+    returnZones: telemetry.returnZones || [telemetry.location],
+    insuranceNote:
+      telemetry.insuranceNote ||
+      'Traffic insurance notice is provided; illegal riding, unsafe parking, intentional damage, and rule violations remain rider responsibility.',
+    imageFit: telemetry.imageFit || 'contain',
+    imagePosition: telemetry.imagePosition || 'center bottom',
+    imageScale: telemetry.imageScale || 1,
+    opsStatus: telemetry.opsStatus || (telemetry.available ? 'deployed' : 'in-use'),
+    assignedStaff: telemetry.assignedStaff || 'Unassigned',
+  }
+}
+
 function buildUserView(user, state) {
   const bookings = state.bookings.filter((item) => item.userId === user.id)
   const activeBookings = bookings.filter((item) => item.status === 'active').length
@@ -237,6 +310,9 @@ function buildUserView(user, state) {
     phone: user.phone,
     createdAt: user.createdAt,
     lastLoginAt: user.lastLoginAt,
+    market: user.market || 'uk',
+    verification: user.verification || (user.cardLast4 ? 'Credit card bound' : 'Registration verified'),
+    paymentMethod: user.paymentMethod || (user.cardLast4 ? `Card ending ${user.cardLast4}` : 'Card to be added at payment'),
     totalBookings: bookings.length,
     activeBookings,
     completedBookings,
@@ -246,15 +322,23 @@ function buildUserView(user, state) {
 
 function buildBookingView(booking, state) {
   const user = state.users.find((item) => item.id === booking.userId)
-  const scooter = state.scooters.find((item) => item.id === booking.scooterId)
+  const scooter = normalizeScooter(state.scooters.find((item) => item.id === booking.scooterId) || { id: booking.scooterId, location: 'Unknown', battery: 0 })
 
   return {
     ...booking,
     userName: user?.name || 'Unknown User',
     userEmail: user?.email || 'n/a',
     userRole: user?.role || 'customer',
-    scooterLocation: scooter?.location || 'Unknown',
-    scooterRate: scooter?.hourlyCost || 0,
+    userMarket: user?.market || 'uk',
+    userVerification: user?.verification || 'Credit card bound',
+    scooterLocation: scooter.location || 'Unknown',
+    scooterRate: scooter.hourlyCost || 0,
+    scooterBattery: scooter.battery,
+    scooterMileageKm: scooter.mileageKm,
+    scooterGps: scooter.gps || null,
+    scooterProfile: scooterProfiles[scooter.profileKey] || scooterProfiles.city,
+    scooterCommunication: scooter.communication,
+    scooterReturnZones: scooter.returnZones,
   }
 }
 
@@ -282,6 +366,9 @@ export async function registerDemoUser(payload) {
   const password = String(payload?.password || '')
   const cardNumber = String(payload?.cardNumber || '').replace(/\s+/g, '')
   const billingPostcode = String(payload?.billingPostcode || '').trim().toUpperCase()
+  const market = String(payload?.market || 'uk')
+  const cardLast4 = String(payload?.cardLast4 || cardNumber.slice(-4)).trim()
+  const verification = market === 'china' ? 'Real-name identity verified' : 'Credit card bound'
 
   if (!name || !email || !password) {
     throw new ApiError('Name, email and password are required.', { status: 400, code: 'INVALID_REGISTER' })
@@ -300,7 +387,10 @@ export async function registerDemoUser(payload) {
       role: 'customer',
       status: 'active',
       phone: '',
-      cardLast4: cardNumber.slice(-4),
+      market,
+      verification,
+      paymentMethod: market === 'china' ? 'Real-name APP wallet' : 'Credit card',
+      cardLast4,
       billingPostcode,
       createdAt: new Date().toISOString(),
       lastLoginAt: '',
@@ -357,7 +447,7 @@ export function updateDemoUserStatus(userId, status) {
 }
 
 export function listDemoScooters() {
-  return readState().scooters.sort((a, b) => a.id.localeCompare(b.id))
+  return readState().scooters.map(normalizeScooter).sort((a, b) => a.id.localeCompare(b.id))
 }
 
 export function addDemoScooter(payload) {
@@ -366,6 +456,8 @@ export function addDemoScooter(payload) {
   const hourlyCost = Number(payload?.hourlyCost || 4)
   const imageUrl = String(payload?.imageUrl || '').trim() || '/scooter-placeholder.svg'
   const battery = Number(payload?.battery || 100)
+  const profileKey = String(payload?.profileKey || 'city')
+  const mileageKm = Number(payload?.mileageKm || 0)
 
   const nextState = updateState((state) => {
     if (!id || !location) {
@@ -381,10 +473,18 @@ export function addDemoScooter(payload) {
       hourlyCost,
       imageUrl,
       battery: Math.max(0, Math.min(100, battery)),
+      profileKey: scooterProfiles[profileKey] ? profileKey : 'city',
+      mileageKm: Math.max(0, mileageKm),
+      gps: payload?.gps || { lat: 51.5072, lng: -0.1276 },
+      returnZones: [location],
+      communication: '4G module online',
+      chargeStatus: battery < 35 ? 'Needs charging' : 'Ready',
+      opsStatus: payload?.available === false ? 'in-use' : 'deployed',
+      assignedStaff: String(payload?.assignedStaff || 'Unassigned'),
     })
   })
 
-  return nextState.scooters
+  return nextState.scooters.map(normalizeScooter)
 }
 
 export function updateDemoScooter(scooterId, changes = {}) {
@@ -400,10 +500,15 @@ export function updateDemoScooter(scooterId, changes = {}) {
     if (typeof changes.imageUrl === 'string') scooter.imageUrl = changes.imageUrl || '/scooter-placeholder.svg'
     if (typeof changes.battery === 'number' && !Number.isNaN(changes.battery)) {
       scooter.battery = Math.max(0, Math.min(100, changes.battery))
+      scooter.chargeStatus = scooter.battery < 35 ? 'Needs charging' : scooter.battery < 70 ? 'Monitor' : 'Ready'
     }
+    if (typeof changes.mileageKm === 'number' && !Number.isNaN(changes.mileageKm)) scooter.mileageKm = Math.max(0, changes.mileageKm)
+    if (typeof changes.profileKey === 'string' && scooterProfiles[changes.profileKey]) scooter.profileKey = changes.profileKey
+    if (typeof changes.opsStatus === 'string') scooter.opsStatus = changes.opsStatus
+    if (typeof changes.assignedStaff === 'string') scooter.assignedStaff = changes.assignedStaff
   })
 
-  return nextState.scooters
+  return nextState.scooters.map(normalizeScooter)
 }
 
 export function removeDemoScooter(scooterId) {
@@ -415,7 +520,7 @@ export function removeDemoScooter(scooterId) {
     state.scooters = state.scooters.filter((item) => item.id !== scooterId)
   })
 
-  return nextState.scooters
+  return nextState.scooters.map(normalizeScooter)
 }
 
 export async function createDemoBooking(payload, currentUser) {
@@ -423,8 +528,10 @@ export async function createDemoBooking(payload, currentUser) {
 
   const scooterId = String(payload?.scooterId || '').trim()
   const hireKey = String(payload?.hireKey || '').trim()
+  const rentalMode = String(payload?.rentalMode || 'remote-pickup')
   const nextState = updateState((state) => {
-    const scooter = state.scooters.find((item) => item.id === scooterId)
+    const scooterRecord = state.scooters.find((item) => item.id === scooterId)
+    const scooter = scooterRecord ? normalizeScooter(scooterRecord) : null
     if (!scooter) {
       throw new ApiError('Scooter not found.', { status: 404, code: 'SCOOTER_NOT_FOUND' })
     }
@@ -434,7 +541,7 @@ export async function createDemoBooking(payload, currentUser) {
 
     const hireMeta = getHireMeta(hireKey, scooter.hourlyCost)
     const bookingId = `BK-${Date.now()}`
-    scooter.available = false
+    scooterRecord.available = false
 
     state.bookings.unshift({
       id: bookingId,
@@ -449,6 +556,14 @@ export async function createDemoBooking(payload, currentUser) {
       pickupPoint: scooter.location,
       paymentLast4: '',
       notes: 'Awaiting payment confirmation.',
+      rentalMode,
+      pickupBattery: scooter.battery,
+      returnBattery: null,
+      energyCharge: 0,
+      overdueFee: 0,
+      damageStatus: rentalMode === 'walk-in' ? 'Store clerk will inspect at pickup.' : 'Pre-unlock photo check pending.',
+      returnCheck: rentalMode === 'sharing' ? 'APP return requires permitted parking-zone GPS check.' : 'Return must be confirmed by store staff.',
+      insurance: 'Traffic insurance notice and liability disclaimer accepted before payment.',
       timeline: [{ step: 'Created', time: formatDateTime() }],
     })
   })

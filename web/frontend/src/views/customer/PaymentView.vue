@@ -8,7 +8,7 @@ import { ApiError } from '@/utils/apiError'
 const router = useRouter()
 const booking = useBookingStore()
 
-const form = reactive({ cardNumber: '', expiry: '', cvv: '' })
+const form = reactive({ cardNumber: '', expiry: '', cvv: '', insuranceAccepted: false })
 const pending = computed(() => booking.pendingBooking)
 const selectedScooter = computed(() => booking.scooters.find((item) => item.id === pending.value?.scooterId))
 const ui = reactive({ loading: false })
@@ -35,6 +35,10 @@ async function submitPayment() {
     ElMessage.error('CVV must be 3 digits')
     return
   }
+  if (!form.insuranceAccepted) {
+    ElMessage.error('Please accept insurance and liability terms before payment.')
+    return
+  }
 
   try {
     ui.loading = true
@@ -59,6 +63,8 @@ async function submitPayment() {
     <article v-if="pending" class="summary ds-panel">
       <strong>{{ pending.scooterId }}</strong>
       <span>{{ pending.hireLabel }}</span>
+      <span>{{ pending.rentalMode }}</span>
+      <span>Pickup battery {{ pending.pickupBattery }}%</span>
       <span v-if="selectedScooter" class="summary-meta">{{ selectedScooter.modelName }} · {{ selectedScooter.battery }}% battery at pickup</span>
       <b>GBP {{ pending.cost }}</b>
     </article>
@@ -78,6 +84,10 @@ async function submitPayment() {
           <input v-model="form.cvv" class="ds-input" placeholder="123" />
         </div>
       </div>
+      <label class="terms-line">
+        <input v-model="form.insuranceAccepted" type="checkbox" />
+        <span>Accept traffic insurance notice, QR unlock/return rules, overtime auto-charge, battery difference settlement, damage inspection, and liability disclaimer.</span>
+      </label>
       <button class="primary-btn ds-btn ds-btn-primary ds-btn-pill" :disabled="ui.loading" @click="submitPayment">
         {{ ui.loading ? 'Processing...' : 'Pay Now' }}
       </button>
@@ -108,6 +118,7 @@ h1 { margin: 0; font-size: 30px; font-family: "Space Grotesk", sans-serif; }
 .row-2 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
 .primary-btn { width: fit-content; }
 .primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.terms-line { display: flex; gap: 8px; align-items: flex-start; color: #475569; font-size: 13px; }
 .policy-card {
   padding: 16px;
 }

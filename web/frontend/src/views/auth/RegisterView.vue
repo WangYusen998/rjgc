@@ -14,6 +14,8 @@ const form = reactive({
   email: '',
   password: '',
   confirmPassword: '',
+  market: 'uk',
+  identityNumber: '',
   cardholder: '',
   cardNumber: '',
   billingPostcode: '',
@@ -25,6 +27,7 @@ const errors = reactive({
   email: '',
   password: '',
   confirmPassword: '',
+  identityNumber: '',
   cardholder: '',
   cardNumber: '',
   billingPostcode: '',
@@ -35,6 +38,7 @@ const ui = reactive({
   loading: false,
 })
 const policySummary = computed(() => {
+  if (form.market === 'china') return form.identityNumber ? 'Real-name identity ready' : 'Real-name verification required'
   const digits = form.cardNumber.replace(/\s+/g, '')
   return digits.length >= 4 ? `Card ending ${digits.slice(-4)}` : 'No card linked yet'
 })
@@ -44,6 +48,7 @@ function validateForm() {
   errors.email = ''
   errors.password = ''
   errors.confirmPassword = ''
+  errors.identityNumber = ''
   errors.cardholder = ''
   errors.cardNumber = ''
   errors.billingPostcode = ''
@@ -73,11 +78,15 @@ function validateForm() {
   }
 
   const normalizedCardNumber = form.cardNumber.replace(/\s+/g, '')
-  const hasOptionalCardInput = Boolean(form.cardholder.trim() || normalizedCardNumber || form.billingPostcode.trim())
+  const shouldValidateCard = form.market === 'uk'
 
-  if (hasOptionalCardInput) {
+  if (form.market === 'china' && !form.identityNumber.trim()) {
+    errors.identityNumber = 'Real-name ID number is required for China APP registration.'
+  }
+
+  if (shouldValidateCard) {
     if (!form.cardholder.trim()) {
-      errors.cardholder = 'Cardholder name is required if you want to save a card.'
+      errors.cardholder = 'Cardholder name is required for UK credit-card binding.'
     }
 
     if (!/^\d{16}$/.test(normalizedCardNumber)) {
@@ -112,6 +121,9 @@ async function submitRegister() {
       name: form.name.trim(),
       email: form.email,
       password: form.password,
+      market: form.market,
+      identityNumber: form.identityNumber.trim(),
+      cardLast4: form.cardNumber.replace(/\s+/g, '').slice(-4),
       cardholder: form.cardholder.trim(),
       cardNumber: form.cardNumber.replace(/\s+/g, ''),
       billingPostcode: form.billingPostcode.trim().toUpperCase(),
@@ -131,7 +143,7 @@ async function submitRegister() {
     <article class="auth-card ds-panel">
       <header class="auth-head">
         <h1>Join SwiftRide</h1>
-        <p>Create your account today</p>
+        <p>Create an account for China real-name APP use or UK credit-card rental.</p>
       </header>
 
       <form class="auth-body" @submit.prevent="submitRegister">
@@ -180,18 +192,43 @@ async function submitRegister() {
           :error="errors.confirmPassword"
         />
 
+        <div class="market-switch">
+          <label :class="{ active: form.market === 'china' }">
+            <input v-model="form.market" type="radio" value="china" />
+            China: real-name registration
+          </label>
+          <label :class="{ active: form.market === 'uk' }">
+            <input v-model="form.market" type="radio" value="uk" />
+            UK: bind credit card
+          </label>
+        </div>
+
         <section class="policy-card">
           <div>
-            <h2>UK registration and payment setup</h2>
-            <p>For the UK rental flow, card binding is optional at registration. If a card is saved, late return fees and damage charges can be billed to it later.</p>
+            <h2>{{ form.market === 'china' ? 'China APP registration' : 'UK registration and payment setup' }}</h2>
+            <p v-if="form.market === 'china'">China users must complete real-name verification before QR unlock, APP return, and safety responsibility confirmation.</p>
+            <p v-else>For the UK rental flow, credit-card binding is required at registration so late return fees and damage charges can be billed later.</p>
           </div>
           <span class="policy-chip">{{ policySummary }}</span>
         </section>
 
         <AuthField
+          v-if="form.market === 'china'"
+          id="register-identity"
+          v-model="form.identityNumber"
+          label="Real-name ID"
+          type="text"
+          icon="ID"
+          autocomplete="off"
+          placeholder="Passport / national ID"
+          :error="errors.identityNumber"
+        />
+
+        <AuthField
+          v-if="form.market === 'uk'"
           id="register-cardholder"
           v-model="form.cardholder"
-          label="Cardholder Name (Optional)"
+          label="Cardholder Name"
           type="text"
           icon="£"
           autocomplete="cc-name"
@@ -200,9 +237,10 @@ async function submitRegister() {
         />
 
         <AuthField
+          v-if="form.market === 'uk'"
           id="register-card-number"
           v-model="form.cardNumber"
-          label="Credit Card Number (Optional)"
+          label="Credit Card Number"
           type="text"
           icon="#"
           autocomplete="cc-number"
@@ -211,9 +249,10 @@ async function submitRegister() {
         />
 
         <AuthField
+          v-if="form.market === 'uk'"
           id="register-postcode"
           v-model="form.billingPostcode"
-          label="Billing Postcode (Optional)"
+          label="Billing Postcode"
           type="text"
           icon=">"
           autocomplete="postal-code"
@@ -285,6 +324,29 @@ async function submitRegister() {
   margin: 0 0 2px;
   color: #64748b;
   font-size: 12px;
+}
+
+.market-switch {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.market-switch label {
+  border: 1px solid #d3e0f0;
+  border-radius: 12px;
+  padding: 10px;
+  color: #334155;
+  font-weight: 700;
+  background: #f8fbff;
+  display: flex;
+  gap: 8px;
+}
+
+.market-switch label.active {
+  border-color: #0b63d6;
+  background: #eef6ff;
+  color: #0b63d6;
 }
 
 .policy-card {
@@ -373,6 +435,10 @@ async function submitRegister() {
 }
 
 @media (max-width: 680px) {
+  .market-switch {
+    grid-template-columns: 1fr;
+  }
+
   .policy-card {
     flex-direction: column;
   }
