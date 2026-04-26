@@ -112,10 +112,11 @@ INSERT INTO users (
   card_last4, billing_postcode, payment_method
 )
 VALUES
-  ('Admin', 'admin@swiftride.com', '$2a$10$tx8lW3C2UR6YQe0tS.8oM.vtDcg9DB2HGwM8KAE9V9N68cDNaDfN6', 'admin', 'active', '+44 20 7000 1000', 'uk', 'Credit card bound', '4242', 'SW1A1AA', 'Credit card'),
-  ('Alice Carter', 'alice@swiftride.com', '$2a$10$tx8lW3C2UR6YQe0tS.8oM.vtDcg9DB2HGwM8KAE9V9N68cDNaDfN6', 'customer', 'active', '+44 20 7000 1001', 'uk', 'Credit card bound', '4242', 'SW1A1AA', 'Credit card'),
-  ('Ben Foster', 'ben@swiftride.com', '$2a$10$tx8lW3C2UR6YQe0tS.8oM.vtDcg9DB2HGwM8KAE9V9N68cDNaDfN6', 'customer', 'active', '+44 20 7000 1002', 'uk', 'Credit card bound', '1133', 'E1 6AN', 'Credit card');
--- Default password for seeded users: admin123
+  ('Admin', 'admin@swiftride.com', '$2a$10$2GtP1NH1RZzxv9qAvLUc/u1bFvkfyEKZF1IMOfp9isbLtR4g49A/u', 'admin', 'active', '+44 20 7000 1000', 'uk', 'Credit card bound', '4242', 'SW1A1AA', 'Credit card'),
+  ('Alice Carter', 'alice@swiftride.com', '$2a$10$Tt1B.hbi.Y1RpL0pXb1FtucfgeuRJAUSuwq.JLUgf3A5J4QIuUpdS', 'customer', 'active', '+44 20 7000 1001', 'uk', 'Credit card bound', '4242', 'SW1A1AA', 'Credit card'),
+  ('Ben Foster', 'ben@swiftride.com', '$2a$10$SMWxmdHnGEwMRGwYbGlvael8s0aeOzRasnSyIK6xbSQDpsZSYN0HS', 'customer', 'active', '+44 20 7000 1002', 'uk', 'Credit card bound', '1133', 'E1 6AN', 'Credit card'),
+  ('Clara Singh', 'clara@swiftride.com', '$2a$10$gruq9Tsp8p6DcoLAoV7tZufJho2xocMG.xjQuLbX.ydxibmPBlpVm', 'customer', 'suspended', '+44 20 7000 1003', 'uk', 'Credit card bound', '5599', 'EC1A1BB', 'Credit card');
+-- Seeded passwords: admin/admin123, alice/alice123, ben/ben12345, clara/clara123
 
 INSERT INTO bookings (
   code, user_id, scooter_id, hire_key, hire_label, cost, status, route,
