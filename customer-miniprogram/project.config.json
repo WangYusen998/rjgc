@@ -1,0 +1,54 @@
+{
+  "description": "SwiftRide WeChat Mini Program",
+  "appid": "wx36772c2e4a53a5df",
+  "projectname": "swiftride-customer-miniprogram",
+  "miniprogramRoot": "dist/build/mp-weixin/",
+  "compileType": "miniprogram",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "Home",
+          "pathName": "pages/home/index",
+          "query": ""
+        },
+        {
+          "name": "Scan booking",
+          "pathName": "pages/booking/index",
+          "query": "code=SR-SC101"
+        }
+      ]
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

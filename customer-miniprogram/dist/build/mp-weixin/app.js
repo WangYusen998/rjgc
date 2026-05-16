@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,Symbol.toStringTag,{value:"Module"});const e=require("./common/vendor.js"),t=require("./data/i18n.js");Math;const a={onLaunch(){console.log("SwiftRide customer mini program launched"),t.getLang()&&t.applyTabBarLanguage()}};function o(){return{app:e.createSSRApp(a)}}o().app.mount("#app"),exports.createApp=o;
