@@ -1,0 +1,1 @@
+"use strict";const o=require("../common/vendor.js");exports.getLocation=function(n={}){o.index.getLocation(n)},exports.openLocation=function(n={}){o.index.openLocation(n)},exports.scanCode=function(n={}){o.index.scanCode(n)};

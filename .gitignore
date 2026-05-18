@@ -1,2 +1,8 @@
 .DS_Store
 **/.DS_Store
+node_modules/
+**/node_modules/
+*.log
+*.err.log
+**/.mysql-data-3307/
+**/.vite/
