@@ -1,0 +1,25 @@
+{
+  "name": "SwiftRide",
+  "appid": "__UNI__SWIFTRIDE",
+  "description": "SwiftRide customer mini program",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wx36772c2e4a53a5df",
+    "requiredPrivateInfos": [
+      "getLocation"
+    ],
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于定位附近门店、车辆和还车点。"
+      }
+    },
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  }
+}
