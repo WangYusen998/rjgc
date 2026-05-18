@@ -147,5 +147,30 @@ router.patch('/:code', async (req, res, next) => {
   }
 })
 
-export default router
+router.delete('/:code', async (req, res, next) => {
+  try {
+    const code = String(req.params.code || '').trim()
+    if (!code) return res.status(400).json({ message: 'Booking code is required' })
 
+    const result = await transaction(async (connection) => {
+      const [[booking]] = await connection.execute('SELECT id, scooter_id, status FROM bookings WHERE code = ? LIMIT 1', [code])
+      if (!booking) return { deleted: false }
+
+      await connection.execute('DELETE FROM bookings WHERE id = ?', [booking.id])
+      if (['ongoing', 'reserved'].includes(booking.status)) {
+        await connection.execute(
+          "UPDATE scooters SET status = 'available', lock_status = '已上锁' WHERE id = ?",
+          [booking.scooter_id],
+        )
+      }
+      return { deleted: true }
+    })
+
+    if (!result.deleted) return res.status(404).json({ message: 'Booking not found' })
+    return res.json({ ok: true })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+export default router

@@ -194,6 +194,7 @@
                 <el-button size="small" type="success" @click="payBooking(row)">模拟支付</el-button>
                 <el-button size="small" type="primary" @click="returnBooking(row)">后台还车</el-button>
                 <el-button size="small" type="danger" plain @click="cancelBooking(row)">取消</el-button>
+                <el-button size="small" type="danger" @click="deleteBooking(row)">删除订单</el-button>
               </div>
             </template>
           </el-table-column>
@@ -221,10 +222,10 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="银行卡" width="110">
+          <el-table-column label="银行卡后4位" width="110">
             <template #default="{ row }">{{ row.bankCardLast4 || '-' }}</template>
           </el-table-column>
-          <el-table-column label="信用卡" width="110">
+          <el-table-column label="信用卡后4位" width="110">
             <template #default="{ row }">{{ row.cardLast4 || '-' }}</template>
           </el-table-column>
           <el-table-column prop="bookingCount" label="历史订单" width="100" />
@@ -274,7 +275,7 @@
           <el-table-column label="超时扣费" width="110">
             <template #default="{ row }">{{ money(row.overdueFee) }}</template>
           </el-table-column>
-          <el-table-column label="异地调度费" width="120">
+          <el-table-column label="调度费" width="120">
             <template #default="{ row }">{{ money(row.dispatchFee) }}</template>
           </el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="160" />
@@ -294,9 +295,9 @@
           <el-table-column prop="name" label="站点" min-width="180" />
           <el-table-column prop="address" label="地址" min-width="260" />
           <el-table-column prop="available" label="车辆库存" width="100" />
-          <el-table-column prop="open" label="开放时间" width="140" />
+          <el-table-column prop="open" label="营业时间" width="140" />
           <el-table-column prop="rating" label="评分" width="90" />
-          <el-table-column label="经纬度" width="190">
+          <el-table-column label="坐标" width="190">
             <template #default="{ row }">{{ Number(row.latitude).toFixed(4) }}, {{ Number(row.longitude).toFixed(4) }}</template>
           </el-table-column>
         </el-table>
@@ -320,7 +321,7 @@
           <el-table-column prop="priority" label="优先级" width="100" />
           <el-table-column label="操作" min-width="180">
             <template #default="{ row }">
-              <el-button size="small" type="primary" @click="finishCharging(row)">充电完成并恢复可租</el-button>
+              <el-button size="small" type="primary" @click="finishCharging(row)">充电完成并恢复可骑</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -338,7 +339,7 @@
         <el-table :data="faults" height="560">
           <el-table-column prop="scooterId" label="车辆" width="120" />
           <el-table-column prop="issue" label="故障描述" min-width="180" />
-          <el-table-column label="车辆状态" width="120">
+          <el-table-column label="状态" width="120">
             <template #default="{ row }">{{ statusLabel(findScooter(row.scooterId)?.status) }}</template>
           </el-table-column>
           <el-table-column label="头盔" width="90">
@@ -469,8 +470,8 @@ const dashboard = ref({
 })
 
 const scooterStatuses = ['available', 'reserved', 'charging', 'maintenance']
-const issueStatuses = ['待处理', '处理中', '已解决', '寰呭鐞?', '澶勭悊涓?', '宸茶В鍐?']
-const issuePriorities = ['高', '中', '低', '楂?', '涓?', '浣?']
+const issueStatuses = ['待处理', '处理中', '已解决']
+const issuePriorities = ['高', '中', '低']
 
 const users = computed(() => dashboard.value.users || [])
 const stores = computed(() => dashboard.value.stores || [])
@@ -627,27 +628,39 @@ async function createScooter() {
 }
 
 function markScooterAvailable(row) {
-  return updateScooter(row, {
-    status: 'available',
-    helmet: true,
-    lockStatus: '已上锁',
-    commStatus: '在线',
-  }, `${row.id} 已恢复可用`)
+  return updateScooter(
+    row,
+    {
+      status: 'available',
+      helmet: true,
+      lockStatus: '已上锁',
+      commStatus: '在线',
+    },
+    `${row.id} 已恢复可用`,
+  )
 }
 
 function markScooterCharging(row) {
-  return updateScooter(row, {
-    status: 'charging',
-    lockStatus: '充电锁定',
-    commStatus: '在线',
-  }, `${row.id} 已进入充电`)
+  return updateScooter(
+    row,
+    {
+      status: 'charging',
+      lockStatus: '充电锁定',
+      commStatus: '在线',
+    },
+    `${row.id} 已进入充电`,
+  )
 }
 
 function markScooterMaintenance(row) {
-  return updateScooter(row, {
-    status: 'maintenance',
-    lockStatus: '维修锁定',
-  }, `${row.id} 已标记维修`)
+  return updateScooter(
+    row,
+    {
+      status: 'maintenance',
+      lockStatus: '维修锁定',
+    },
+    `${row.id} 已标记维修`,
+  )
 }
 
 function boostBattery(row) {
@@ -657,23 +670,31 @@ function boostBattery(row) {
 function finishCharging(row) {
   const scooter = findScooter(row.scooterId)
   if (!scooter) return
-  return updateScooter(scooter, {
-    status: 'available',
-    battery: Math.max(90, Number(scooter.battery || 0)),
-    lockStatus: '已上锁',
-    commStatus: '在线',
-  }, `${scooter.id} 已完成充电`)
+  return updateScooter(
+    scooter,
+    {
+      status: 'available',
+      battery: Math.max(90, Number(scooter.battery || 0)),
+      lockStatus: '已上锁',
+      commStatus: '在线',
+    },
+    `${scooter.id} 已完成充电`,
+  )
 }
 
 function repairScooter(row) {
   const scooter = findScooter(row.scooterId)
   if (!scooter) return
-  return updateScooter(scooter, {
-    status: 'available',
-    helmet: true,
-    lockStatus: '已上锁',
-    commStatus: '在线',
-  }, `${scooter.id} 已维修完成`)
+  return updateScooter(
+    scooter,
+    {
+      status: 'available',
+      helmet: true,
+      lockStatus: '已上锁',
+      commStatus: '在线',
+    },
+    `${scooter.id} 已维修完成`,
+  )
 }
 
 async function updateBooking(row, patch, message = `${row.id} 已更新`) {
@@ -692,39 +713,71 @@ async function updateBooking(row, patch, message = `${row.id} 已更新`) {
 function extendBooking(row) {
   const minutes = Number(row.minutes || 0) + 15
   const total = Number(row.total || 0) + 18
-  return updateBooking(row, {
-    minutes,
-    total: Number(total.toFixed(2)),
-    lastAction: '后台已延期 15 分钟',
-  }, `${row.id} 已延期`)
+  return updateBooking(
+    row,
+    {
+      minutes,
+      total: Number(total.toFixed(2)),
+      lastAction: '后台已延长 15 分钟',
+    },
+    `${row.id} 已延期`,
+  )
 }
 
 function payBooking(row) {
-  return updateBooking(row, {
-    status: row.status === 'ongoing' ? 'paid' : row.status,
-    paymentMethod: row.paymentMethod || '后台模拟支付',
-    lastAction: '后台模拟支付成功',
-  }, `${row.id} 已模拟支付`)
+  return updateBooking(
+    row,
+    {
+      status: row.status === 'ongoing' ? 'paid' : row.status,
+      paymentMethod: row.paymentMethod || '后台模拟支付',
+      lastAction: '后台模拟支付成功',
+    },
+    `${row.id} 已模拟支付`,
+  )
 }
 
 function returnBooking(row) {
   const total = Number(row.total || 0) + Number(row.batteryFee || 0) + Number(row.overdueFee || 0) + Number(row.dispatchFee || 0)
-  return updateBooking(row, {
-    status: 'returned',
-    returnChecked: true,
-    endBattery: row.endBattery ?? Math.max(Number(row.startBattery || 80) - 12, 5),
-    endMileage: row.endMileage ?? Number(row.startMileage || 0) + 5,
-    damageReport: '无',
-    total: Number(total.toFixed(2)),
-    lastAction: '后台完成还车检查',
-  }, `${row.id} 已还车`)
+  return updateBooking(
+    row,
+    {
+      status: 'returned',
+      returnChecked: true,
+      endBattery: row.endBattery ?? Math.max(Number(row.startBattery || 80) - 12, 5),
+      endMileage: row.endMileage ?? Number(row.startMileage || 0) + 5,
+      damageReport: '无',
+      total: Number(total.toFixed(2)),
+      lastAction: '后台完成还车检查',
+    },
+    `${row.id} 已还车`,
+  )
 }
 
 function cancelBooking(row) {
-  return updateBooking(row, {
-    status: 'cancelled',
-    lastAction: '后台取消订单，车辆重新释放',
-  }, `${row.id} 已取消`)
+  return updateBooking(
+    row,
+    {
+      status: 'cancelled',
+      lastAction: '后台取消订单，车辆重新释放',
+    },
+    `${row.id} 已取消`,
+  )
+}
+
+async function deleteBooking(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除订单 ${row.id} 吗？该操作会从数据库中移除此订单记录。`,
+      '删除订单',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    )
+    await api(`/bookings/${encodeURIComponent(row.id)}`, { method: 'DELETE' })
+    ElMessage.success(`${row.id} 已删除`)
+    await loadAll()
+  } catch (error) {
+    if (error === 'cancel') return
+    ElMessage.error(error.message || '删除订单失败')
+  }
 }
 
 async function updateIssue(row, patch, message = `${row.id} 已更新`) {
@@ -743,7 +796,7 @@ async function updateIssue(row, patch, message = `${row.id} 已更新`) {
 async function deleteUser(row) {
   try {
     await ElMessageBox.confirm(
-      `确定删除用户 ${row.account} 吗？该用户的订单记录也会从数据库删除，问题反馈会保留但解绑用户。`,
+      `确定删除用户 ${row.account} 吗？该用户的订单记录也会从数据库中删除，问题反馈会保留但解绑用户。`,
       '删除用户',
       { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
     )
@@ -787,7 +840,7 @@ function statusClass(status = '') {
 }
 
 function isResolvedIssue(status = '') {
-  return ['已解决', 'resolved', '宸茶В鍐?'].includes(status)
+  return ['已解决', 'resolved'].includes(status)
 }
 
 function money(value) {

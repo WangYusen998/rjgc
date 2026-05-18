@@ -1,68 +1,113 @@
-# SwiftRide App + Web Split
+# SwiftRide
 
-This folder is a separate working copy for changing the project into:
+SwiftRide 是一个校园共享电动滑板车项目，包含用户端、运营管理端和后端 API。
+用户端网页
+https://goswiftride.xyz
+管理端网页
+https://admin.goswiftride.xyz
 
-- `customer-app`: mobile app style customer interface.
-- `customer-miniprogram`: WeChat Mini Program customer client.
-- `management-web`: desktop web management interface.
-- `backend`: shared Express + MySQL API.
-- `docs`: notes for the split and coursework evidence.
+## 目录结构
 
-The original `../web` folder is untouched.
-
-## Target Shape
-
-The customer side should behave like an app:
-
-- `customer-miniprogram` is the deployable WeChat Mini Program version.
-- Mobile-first layout.
-- Bottom tab navigation.
-- Customer routes only: register, login, scooters, map, booking, payment, history, feedback.
-- Optional PWA setup so it can be presented as an installable app-style client.
-
-The management side should behave like a web admin system:
-
-- Desktop-first dashboard.
-- Admin routes only: users, bookings, scooters, revenue, issues.
-- Sidebar/table based workflows for management duties.
-
-Both clients use the same backend API:
-
-```bash
-VITE_API_BASE_URL=http://localhost:8081/api
+```text
+backend/               Express + MySQL API
+customer-miniprogram/  用户端，支持 H5/PWA 和微信小程序构建
+management-web/        运营管理后台 Web
+docs/                  项目说明和设计记录
 ```
 
-## Suggested Dev Ports
+已清理掉的内容包括：`node_modules`、构建产物、服务器部署副本、临时 zip 包、运行日志、调试截图和本机私有配置。
+
+## 本地运行
+
+### 1. 后端
 
 ```bash
-# Backend
 cd backend
 npm install
-npm run dev
+npm run start
+```
 
-# Customer app
-cd customer-app
-npm install
-npm run dev
-# http://127.0.0.1:5175/
+默认 API 地址：
 
-# WeChat Mini Program customer client
+```text
+http://127.0.0.1:8081/api
+```
+
+数据库初始化 SQL 位于：
+
+```text
+backend/sql/init_swiftride.sql
+```
+
+### 2. 用户端 H5
+
+```bash
 cd customer-miniprogram
-pnpm install
-pnpm run build:mp-weixin
-# Open customer-miniprogram/dist/build/mp-weixin in WeChat DevTools
+npm install
+npm run dev:h5
+```
 
-# Management web
+生产构建：
+
+```bash
+npm run build:h5
+```
+
+构建结果：
+
+```text
+customer-miniprogram/dist/build/h5
+```
+
+### 3. 微信小程序
+
+```bash
+cd customer-miniprogram
+npm install
+npm run build:mp-weixin
+```
+
+然后用微信开发者工具打开：
+
+```text
+customer-miniprogram/dist/build/mp-weixin
+```
+
+### 4. 管理后台
+
+```bash
 cd management-web
 npm install
 npm run dev
-# http://127.0.0.1:5176/
 ```
 
-## Next Edits
+生产构建：
 
-1. In `customer-miniprogram/src/manifest.json`, replace `wx-your-appid-here` with the real WeChat Mini Program AppID.
-2. In `customer-miniprogram/src/api/config.js`, replace the local API URL with the production HTTPS API domain before submission.
-3. In WeChat DevTools, disable domain checks only for local development. Production must use a registered HTTPS request domain.
-4. In `management-web`, make `/admin` the default entry and remove public/customer navigation.
-5. Keep backend routes shared unless an endpoint is only useful to one client.
+```bash
+npm run build -- --base=/admin/
+```
+
+## 高德地图配置
+
+用户端 H5 会读取服务器根目录下的：
+
+```text
+/amap-config.json
+```
+
+示例：
+
+```json
+{
+  "key": "你的高德 Web端 JS API Key",
+  "securityJsCode": "你的高德安全密钥"
+}
+```
+
+没有配置 Key 时，地图页会回退到项目内置的校园示意图。
+
+## 部署提示
+
+用户端 H5 部署到服务器 Web 根目录；管理后台构建时使用 `/admin/` base 并部署到 Web 根目录的 `admin/` 子目录。
+
+
