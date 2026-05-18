@@ -84,15 +84,29 @@ function tv(value) {
 }
 
 function storeName(store) {
-  if (!isEn.value) return store.name
-  const names = {
+  if (!store) return isEn.value ? 'All' : '全部'
+  const enById = {
     all: 'All',
     'st-01': 'Xian Road North Gate',
     'st-02': 'Library Plaza',
     'st-03': 'Jiaoda Xingye North Street',
     'st-04': 'South Campus Plaza',
   }
-  return names[store.id] || store.name
+  const zhById = {
+    all: '全部',
+    'st-01': '犀安路北门站',
+    'st-02': '图书馆广场站',
+    'st-03': '交大兴业北街站',
+    'st-04': '南区生活广场站',
+  }
+  const zhByEnName = {
+    'North Gate Station': '犀安路北门站',
+    'Library Square Station': '图书馆广场站',
+    'Metro Station Exit': '交大兴业北街站',
+    'South Area Station': '南区生活广场站',
+  }
+  if (isEn.value) return enById[store.id] || store.name
+  return zhById[store.id] || zhByEnName[store.name] || store.name
 }
 
 function currentStore(storeId) {

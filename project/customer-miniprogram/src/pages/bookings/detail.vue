@@ -7,6 +7,7 @@
           {{ bookingStatusText(booking.status) }}
         </text>
       </view>
+
       <image class="scooter-image" :src="booking.scooterImage" mode="aspectFill" />
       <text class="muted">{{ booking.scooterId }} · {{ booking.scooterModel }}</text>
       <text class="subtle">{{ booking.storeName }} · {{ booking.createdAt }}</text>
@@ -21,7 +22,7 @@
           <text class="metric-label">{{ isEn ? 'Current amount' : '当前金额' }}</text>
         </view>
         <view class="metric">
-          <text class="metric-value">{{ booking.insurance ? (isEn ? 'Selected' : '已选') : (isEn ? 'Not selected' : '未选') }}</text>
+          <text class="metric-value">{{ booking.insurance ? (isEn ? 'Selected' : '已选') : (isEn ? 'No' : '未选') }}</text>
           <text class="metric-label">{{ isEn ? 'Ride insurance' : '骑行保险' }}</text>
         </view>
       </view>
@@ -33,11 +34,11 @@
         </view>
         <view class="info-row">
           <text>{{ isEn ? 'Return battery' : '还车电量' }}</text>
-          <text>{{ booking.endBattery === null ? (isEn ? 'Pending' : '待录入') : `${booking.endBattery}%` }}</text>
+          <text>{{ booking.endBattery == null ? (isEn ? 'Pending' : '待录入') : `${booking.endBattery}%` }}</text>
         </view>
         <view class="info-row">
           <text>{{ isEn ? 'Mileage change' : '里程变化' }}</text>
-          <text>{{ booking.endMileage === null ? (isEn ? 'Riding' : '骑行中') : `${booking.startMileage} → ${booking.endMileage} km` }}</text>
+          <text>{{ booking.endMileage == null ? (isEn ? 'Riding' : '骑行中') : `${booking.startMileage} -> ${booking.endMileage} km` }}</text>
         </view>
         <view class="info-row">
           <text>{{ isEn ? 'Battery fee difference' : '电费差额' }}</text>
@@ -61,7 +62,7 @@
         </view>
         <view class="info-row">
           <text>{{ isEn ? 'Latest action' : '最近操作' }}</text>
-          <text>{{ isEn ? 'Waiting for user action' : (booking.lastAction || '等待用户操作') }}</text>
+          <text>{{ booking.lastAction || (isEn ? 'Waiting for user action' : '等待用户操作') }}</text>
         </view>
       </view>
 
@@ -97,14 +98,15 @@
           <checkbox-group @change="onDeductionAgreementChange">
             <label class="check-row">
               <checkbox value="accepted" :checked="agreeDeduction" color="#0f766e" />
-              <text>{{ isEn ? 'I authorize overdue fees, damage compensation, and battery fee differences to be charged to the selected method' : '我确认可从所选付款方式扣除超时费、损坏赔偿和电费差额' }}</text>
+              <text>{{ isEn ? 'I authorize fees to be charged to the selected method' : '我确认可从所选付款方式扣除超时费、损坏赔偿和电费差额' }}</text>
             </label>
           </checkbox-group>
         </view>
         <button :class="['ghost-btn', canPay ? '' : 'disabled-btn']" @tap="pay">{{ isEn ? 'Confirm Agreements and Mock Pay' : '确认协议并模拟支付' }}</button>
         <button class="ghost-btn danger-btn" @tap="cancel">{{ isEn ? 'Cancel Order' : '取消订单' }}</button>
       </view>
-      <view class="actions" v-else-if="booking.status === 'returned'">
+
+      <view class="actions" v-else-if="false">
         <view class="payment-box">
           <text class="label">{{ isEn ? 'Payment method' : '付款方式' }}</text>
           <view class="payment-grid">
@@ -126,11 +128,18 @@
           <checkbox-group @change="onDeductionAgreementChange">
             <label class="check-row">
               <checkbox value="accepted" :checked="agreeDeduction" color="#0f766e" />
-              <text>{{ isEn ? 'I authorize overdue fees, damage compensation, and battery fee differences to be charged to the selected method' : '我确认可从所选付款方式扣除超时费、损坏赔偿和电费差额' }}</text>
+              <text>{{ isEn ? 'I authorize fees to be charged to the selected method' : '我确认可从所选付款方式扣除超时费、损坏赔偿和电费差额' }}</text>
             </label>
           </checkbox-group>
         </view>
         <button :class="['primary-btn', canPay ? '' : 'disabled-btn']" @tap="pay">{{ isEn ? 'Confirm Agreements and Mock Pay' : '确认协议并模拟支付' }}</button>
+      </view>
+
+      <view class="actions" v-else-if="booking.status === 'returned'">
+        <view class="settled-box">
+          <text class="settled-title">{{ isEn ? 'Return Completed' : '还车已完成' }}</text>
+          <text class="muted">{{ isEn ? 'No overdue, damage, dispatch, or battery difference fee is due.' : '本次无超时费、损坏赔偿、异地调度费和电费差额，无需再次付款。' }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -145,8 +154,8 @@ import {
   cancelBooking,
   extendBooking,
   finishReturn,
-  mockPayBooking,
   getCurrentUser,
+  mockPayBooking,
   readBookings,
 } from '../../data/mock'
 import { fetchRemoteBookings, updateRemoteBooking } from '../../data/mock'
@@ -164,17 +173,27 @@ const user = ref(null)
 const isEn = computed(() => getLang() === 'en')
 
 const paymentMethods = computed(() => {
-  const methods = ['模拟钱包']
+  const methods = [isEn.value ? 'Mock Wallet' : '模拟钱包']
   if (user.value?.bankCardLast4) {
     methods.push(`${user.value.bankName || '中国银行卡'} ****${user.value.bankCardLast4}`)
   }
   if (user.value?.cardLast4) {
     methods.push(`Credit Card ****${user.value.cardLast4}`)
   }
-  methods.push('微信支付演示')
+  methods.push(isEn.value ? 'WeChat Pay Demo' : '微信支付演示')
   return methods
 })
+
 const canPay = computed(() => Boolean(selectedPayment.value && agreeInsurance.value && agreeDeduction.value))
+const extraFeeTotal = computed(() =>
+  Number(
+    (
+      Number(booking.value?.batteryFee || 0) +
+      Number(booking.value?.overdueFee || 0) +
+      Number(booking.value?.dispatchFee || 0)
+    ).toFixed(2),
+  ),
+)
 
 onLoad(async (query) => {
   user.value = getCurrentUser()
@@ -200,6 +219,7 @@ onLoad(async (query) => {
   } catch {
     booking.value = readBookings().find((item) => item.id === query.id && item.account === user.value.account)
   }
+
   if (user.value?.bankCardLast4) selectedPayment.value = `${user.value.bankName || '中国银行卡'} ****${user.value.bankCardLast4}`
   if (user.value?.cardLast4) selectedPayment.value = `Credit Card ****${user.value.cardLast4}`
 })
@@ -236,13 +256,17 @@ function onDeductionAgreementChange(event) {
 }
 
 async function pay() {
+  if (booking.value?.status === 'returned' && extraFeeTotal.value <= 0) {
+    uni.showToast({ title: isEn.value ? 'No extra fee due' : '无需补缴费用', icon: 'none' })
+    return
+  }
   if (!canPay.value) {
-    uni.showToast({ title: isEn.value ? 'Choose payment and check both safety agreements' : '请先选择付款方式并勾选两个安全协议', icon: 'none' })
+    uni.showToast({ title: isEn.value ? 'Choose payment and check both agreements' : '请先选择付款方式并勾选两个安全协议', icon: 'none' })
     return
   }
   await persistBookingPatch(
     {
-      status: 'paid',
+      status: booking.value.status === 'returned' ? 'returned' : 'paid',
       paymentMethod: selectedPayment.value,
       lastAction: `模拟支付成功，支付方式：${selectedPayment.value}`,
     },
@@ -250,7 +274,9 @@ async function pay() {
   )
   uni.showModal({
     title: isEn.value ? 'Mock Payment Successful' : '模拟支付成功',
-    content: isEn.value ? `Order paid with ${booking.value.paymentMethod}, amount ${booking.value.total} CNY.` : `订单已支付，方式：${booking.value.paymentMethod}，金额 ${booking.value.total} 元。`,
+    content: isEn.value
+      ? `Order paid with ${booking.value.paymentMethod}, amount ${booking.value.total} CNY.`
+      : `订单已支付，方式：${booking.value.paymentMethod}，金额 ${booking.value.total} 元。`,
     showCancel: false,
   })
 }
@@ -259,30 +285,37 @@ function returnByApp() {
   uni.getLocation({
     type: 'gcj02',
     success: (res) => {
-      const result = canReturnAt({ latitude: res.latitude, longitude: res.longitude }, booking.value.returnZoneId)
-      if (!result.ok) {
-        uni.showModal({
-          title: isEn.value ? 'Outside Return Zone' : '未在指定还车区',
-          content: isEn.value ? `You are about ${result.distanceM} m from the approved return zone. You may return out of zone with a 10 CNY dispatch fee.` : `当前距离${result.zone.name}约 ${result.distanceM} 米。可继续异地还车，但将加收 10 元调度费。`,
-          cancelText: isEn.value ? 'Go to Zone' : '去指定点',
-          confirmText: isEn.value ? 'Return Here' : '异地还车',
-          success: (modalRes) => {
-            if (!modalRes.confirm) return
-            completeReturn(true, result.zone.name)
-          },
-        })
-        return
-      }
-      completeReturn(false, result.zone.name)
+      checkReturnLocation({ latitude: res.latitude, longitude: res.longitude })
     },
     fail: () => {
-      uni.showModal({
-        title: isEn.value ? 'Location Not Authorized' : '定位未授权',
-        content: isEn.value ? 'The demo cannot access location. A real system requires location permission before checking return zones.' : '演示环境无法获取定位。实际系统会要求用户授权定位后检查可还车区域。',
-        showCancel: false,
+      const demoResult = canReturnAt(null, booking.value.returnZoneId)
+      checkReturnLocation({
+        latitude: demoResult.zone.latitude,
+        longitude: demoResult.zone.longitude,
       })
+      uni.showToast({ title: isEn.value ? 'Using demo return zone' : '已使用演示还车区定位', icon: 'none' })
     },
   })
+}
+
+function checkReturnLocation(location) {
+  const result = canReturnAt(location, booking.value.returnZoneId)
+  if (!result.ok) {
+    uni.showModal({
+      title: isEn.value ? 'Outside Return Zone' : '未在指定还车区',
+      content: isEn.value
+        ? `You are about ${result.distanceM} m from the approved return zone. You may return out of zone with a 10 CNY dispatch fee.`
+        : `当前距离${result.zone.name}约 ${result.distanceM} 米。可继续异地还车，但将加收 10 元调度费。`,
+      cancelText: isEn.value ? 'Go to Zone' : '去指定点',
+      confirmText: isEn.value ? 'Return Here' : '异地还车',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+        completeReturn(true, result.zone.name)
+      },
+    })
+    return
+  }
+  completeReturn(false, result.zone.name)
 }
 
 async function completeReturn(outOfZone, zoneName) {
@@ -293,6 +326,7 @@ async function completeReturn(outOfZone, zoneName) {
   const overdueFee = overdue.value ? 20 : 0
   const dispatchFee = outOfZone ? 10 : 0
   const total = Number((Number(booking.value.total || 0) + batteryFee + overdueFee + dispatchFee).toFixed(2))
+
   await persistBookingPatch(
     {
       status: 'returned',
@@ -309,18 +343,23 @@ async function completeReturn(outOfZone, zoneName) {
     },
     () =>
       finishReturn(booking.value.id, {
-    endBattery: endBattery.value,
-    endMileage: endMileage.value,
-    damageReport: damageReport.value,
-    overdue: overdue.value,
-    outOfZone,
+        endBattery: endBattery.value,
+        endMileage: endMileage.value,
+        damageReport: damageReport.value,
+        overdue: overdue.value,
+        outOfZone,
       }),
   )
+
   uni.showModal({
     title: isEn.value ? 'Return Completed' : '还车完成',
     content: outOfZone
-      ? (isEn.value ? `Returned out of zone with a 10 CNY dispatch fee. Final amount ${booking.value.total} CNY.` : `已异地还车并加收 10 元调度费，最终金额 ${booking.value.total} 元。`)
-      : (isEn.value ? `Return-zone check passed. Final amount ${booking.value.total} CNY.` : `已通过 ${zoneName} 位置检查，最终金额 ${booking.value.total} 元。`),
+      ? isEn.value
+        ? `Returned out of zone with a 10 CNY dispatch fee. Final amount ${booking.value.total} CNY.`
+        : `已异地还车并加收 10 元调度费，最终金额 ${booking.value.total} 元。`
+      : isEn.value
+        ? `Return-zone check passed. Final amount ${booking.value.total} CNY.`
+        : `已通过 ${zoneName} 位置检查，最终金额 ${booking.value.total} 元。`,
     showCancel: false,
   })
 }
@@ -328,7 +367,7 @@ async function completeReturn(outOfZone, zoneName) {
 function cancel() {
   uni.showModal({
     title: isEn.value ? 'Cancel Order' : '取消订单',
-    content: isEn.value ? 'Cancelling will release the scooter and record the cancelled status. Continue?' : '取消后会释放车辆并记录取消状态，确认继续？',
+    content: isEn.value ? 'Cancelling will release the scooter. Continue?' : '取消后会释放车辆并记录取消状态，确认继续？',
     success: (res) => {
       if (!res.confirm) return
       persistBookingPatch(
@@ -359,85 +398,122 @@ function cancel() {
   width: 100%;
   height: 330rpx;
   margin: 24rpx 0;
-  border-radius: 28rpx;
-  background: #e2e8f0;
+  border-radius: 22rpx;
 }
 
 .inner {
-  margin-top: 30rpx;
+  margin-top: 24rpx;
 }
 
 .info-list {
-  margin-top: 26rpx;
-  border-top: 1rpx solid #e2e8f0;
+  margin-top: 24rpx;
+  border-top: 2rpx solid #e5e7eb;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
-  gap: 18rpx;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #e2e8f0;
+  gap: 22rpx;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid #e5e7eb;
   color: #334155;
-  font-size: 26rpx;
+  font-size: 25rpx;
 }
 
-.return-form {
+.return-form,
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
   margin-top: 28rpx;
 }
 
 .label {
   color: #111827;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 900;
+}
+
+.input,
+.textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 78rpx;
+  padding: 0 22rpx;
+  border: 2rpx solid #dbe4ef;
+  border-radius: 16rpx;
+  background: #ffffff;
+  color: #111827;
+  font-size: 25rpx;
+}
+
+.textarea {
+  min-height: 150rpx;
+  padding-top: 20rpx;
 }
 
 .check-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin: 24rpx 0;
-  color: #111827;
-  font-size: 25rpx;
-}
-
-.return-form button,
-.actions button {
-  margin-top: 18rpx;
+  color: #334155;
+  font-size: 24rpx;
 }
 
 .payment-box {
-  margin-top: 28rpx;
-  padding: 22rpx;
-  border: 2rpx solid #e2e8f0;
-  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  padding: 20rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 18rpx;
   background: #f8fafc;
 }
 
 .payment-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 14rpx;
-  margin-top: 18rpx;
+  gap: 12rpx;
 }
 
 .pay-method {
-  min-height: 74rpx;
-  border: 2rpx solid #dbe5ef;
-  border-radius: 20rpx;
-  background: #fff;
-  color: #334155;
-  font-size: 25rpx;
-  font-weight: 900;
+  min-height: 70rpx;
+  border: 2rpx solid #dbe4ef;
+  border-radius: 16rpx;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 24rpx;
+  font-weight: 800;
 }
 
 .pay-method.active {
   border-color: #0f766e;
-  background: #dcfce7;
-  color: #0f5132;
+  background: #e7f7f1;
+  color: #0f766e;
+}
+
+.settled-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  padding: 24rpx;
+  border: 2rpx solid #bbf7d0;
+  border-radius: 18rpx;
+  background: #f0fdf4;
+}
+
+.settled-title {
+  color: #047857;
+  font-size: 30rpx;
+  font-weight: 900;
 }
 
 .disabled-btn {
-  opacity: 0.45;
+  opacity: 0.5;
+}
+
+.danger-btn {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fff1f2;
 }
 </style>

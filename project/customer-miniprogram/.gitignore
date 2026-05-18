@@ -1,0 +1,22 @@
+.DS_Store
+**/.DS_Store
+node_modules/
+**/node_modules/
+*.log
+*.err.log
+**/.mysql-data-3307/
+**/.vite/
+
+# secrets
+.env
+.env.*
+project/**/.env
+!project/**/.env.example
+
+# dependencies / build outputs
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.nuxt/

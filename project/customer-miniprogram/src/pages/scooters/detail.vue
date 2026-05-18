@@ -72,7 +72,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getScooter, getScooterModel, getStore, statusText } from '../../data/mock'
+import { fetchRemoteScooters, getScooter, getScooterModel, getStore, statusText } from '../../data/mock'
 import { getLang, translateValue } from '../../data/i18n'
 import { openLocation as openMapLocation } from '../../data/platform'
 import { requireLogin } from '../../data/authGuard'
@@ -84,8 +84,16 @@ const angle = ref(25)
 const tilt = ref(0)
 const isEn = computed(() => getLang() === 'en')
 
-onLoad((query) => {
+onLoad(async (query) => {
   scooter.value = getScooter(query.id)
+  try {
+    const list = await fetchRemoteScooters()
+    if (Array.isArray(list) && list.length) {
+      scooter.value = list.find((item) => item.id === query.id || item.qr === query.id) || scooter.value
+    }
+  } catch {
+    // Keep local demo data when the backend is unavailable.
+  }
 })
 
 function book() {
