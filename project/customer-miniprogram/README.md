@@ -20,8 +20,8 @@ Start backend and MySQL first, then:
 
 ```bash
 cd customer-miniprogram
-pnpm install
-pnpm run dev:mp-weixin
+npm install
+npm run dev:mp-weixin
 ```
 
 Open the generated `dist/dev/mp-weixin` folder in WeChat DevTools.
@@ -35,7 +35,7 @@ Details -> Local Settings -> Do not verify valid domain names, web-view, TLS ver
 ## Production Build
 
 ```bash
-pnpm run build:mp-weixin
+npm run build:mp-weixin
 ```
 
 Open this folder in WeChat DevTools:

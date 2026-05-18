@@ -2,8 +2,8 @@
   <view class="page map-page">
     <view class="map-shell">
       <!-- #ifdef H5 -->
-      <view v-if="amapReady" id="amap-container" class="amap-container"></view>
-      <view v-else class="fallback-map">
+      <view id="amap-container" :class="['amap-container', { ready: amapReady }]"></view>
+      <view v-if="!amapReady" class="fallback-map">
         <view class="map-halo halo-north"></view>
         <view class="map-halo halo-south"></view>
         <view class="map-grid"></view>
@@ -55,6 +55,9 @@
       <view v-if="amapReady" class="map-source-badge">
         <text>高德地图 · 西南交大犀浦校区</text>
       </view>
+      <view v-else-if="amapError" class="map-error-badge">
+        <text>{{ amapError }}</text>
+      </view>
     </view>
 
     <scroll-view class="station-tabs" scroll-x>
@@ -103,7 +106,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { distanceKm, scooters, stores } from '../../data/mock'
+import { distanceKm, fetchRemoteScooters, fetchRemoteStores, scooters, stores } from '../../data/mock'
 import { getLang, setNavTitle } from '../../data/i18n'
 import { getLocation, openLocation } from '../../data/platform'
 
@@ -111,15 +114,19 @@ const campusLocation = { latitude: 30.7663, longitude: 103.9847 }
 const campusName = '西南交通大学犀浦校区'
 const center = ref(campusLocation)
 const located = ref(null)
-const activeStoreId = ref(stores[1]?.id || stores[0]?.id || '')
+const storeList = ref(stores)
+const scooterList = ref(scooters)
+const activeStoreId = ref(storeList.value[1]?.id || storeList.value[0]?.id || '')
 const amapReady = ref(false)
+const amapError = ref('')
 const isEn = computed(() => getLang() === 'en')
 
 let amap = null
 let amapMarkers = []
+let refreshTimer = null
 
 const markers = computed(() => [
-  ...stores.map((store, index) => ({
+  ...storeList.value.map((store, index) => ({
     id: index + 1,
     latitude: store.latitude,
     longitude: store.longitude,
@@ -146,10 +153,10 @@ const markers = computed(() => [
   })),
 ])
 
-const availableScooters = computed(() => scooters.filter((item) => item.status === 'available'))
+const availableScooters = computed(() => scooterList.value.filter((item) => item.status === 'available'))
 
 const rankedStores = computed(() => {
-  return stores
+  return storeList.value
     .map((store) => {
       const distance = distanceKm(located.value, store)
       return {
@@ -174,7 +181,7 @@ const visualPoints = computed(() => {
   })
 
   return [
-    ...stores.map((store) => ({
+    ...storeList.value.map((store) => ({
       key: store.id,
       type: 'store',
       store,
@@ -197,18 +204,21 @@ const visualPoints = computed(() => {
   ]
 })
 
-onLoad(() => {
+onLoad(async () => {
   setNavTitle('校园地图', 'Campus Map')
   locate()
+  await refreshMapData()
 })
 
 onMounted(() => {
+  startAutoRefresh()
   // #ifdef H5
   initAmap()
   // #endif
 })
 
 onUnmounted(() => {
+  stopAutoRefresh()
   destroyAmap()
 })
 
@@ -240,9 +250,14 @@ function locate() {
 
 async function initAmap() {
   const { key, securityJsCode } = await getAmapConfig()
-  if (!key || typeof window === 'undefined') return
+  if (typeof window === 'undefined') return
+  if (!key) {
+    amapError.value = '未配置高德 Key，已显示校园示意图'
+    return
+  }
 
   try {
+    amapError.value = ''
     if (securityJsCode) {
       window._AMapSecurityConfig = { securityJsCode }
     }
@@ -265,6 +280,7 @@ async function initAmap() {
     refreshAmapMarkers()
   } catch (error) {
     amapReady.value = false
+    amapError.value = `高德地图加载失败：${error?.message || '请检查 Key、白名单或安全密钥'}`
     console.warn('AMap load failed:', error)
   }
 }
@@ -298,8 +314,13 @@ function loadAmap(key) {
     const script = document.createElement('script')
     script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(key)}`
     script.async = true
-    script.onload = resolve
-    script.onerror = reject
+    script.onload = () => {
+      setTimeout(() => {
+        if (window.AMap) resolve()
+        else reject(new Error('高德脚本已返回，但 AMap 未初始化，通常是 Key 类型、域名白名单或安全密钥不匹配'))
+      }, 0)
+    }
+    script.onerror = () => reject(new Error('高德脚本加载失败，请检查网络或 Key 白名单'))
     document.head.appendChild(script)
   })
   return window.__swiftrideAmapLoading
@@ -322,7 +343,7 @@ function refreshAmapMarkers() {
     amapMarkers.push(marker)
   }
 
-  stores.forEach((store) => makeMarker({ point: store, type: activeStoreId.value === store.id ? 'active' : 'store', label: shortStoreName(store), store }))
+  storeList.value.forEach((store) => makeMarker({ point: store, type: activeStoreId.value === store.id ? 'active' : 'store', label: shortStoreName(store), store }))
   availableScooters.value.forEach((item) => makeMarker({ point: item, type: 'scooter', label: item.id.replace('SC', '') }))
   makeMarker({ point: center.value, type: 'me', label: '我' })
   amap.add(amapMarkers)
@@ -349,6 +370,12 @@ function selectStore(store) {
 }
 
 function storeName(store) {
+  const zhByEnName = {
+    'North Gate Station': '犀安路北门站',
+    'Library Square Station': '图书馆广场站',
+    'Metro Station Exit': '交大兴业北街站',
+    'South Area Station': '南区生活广场站',
+  }
   if (isEn.value) {
     return {
       'st-01': 'Xian Road North Gate',
@@ -362,7 +389,7 @@ function storeName(store) {
     'st-02': '图书馆广场站',
     'st-03': '交大兴业北街站',
     'st-04': '南区生活广场站',
-  }[store.id] || store.name
+  }[store.id] || zhByEnName[store.name] || store.name
 }
 
 function shortStoreName(store) {
@@ -393,7 +420,7 @@ function storeAddress(store) {
 
 function markerTap(event) {
   const id = event.detail.markerId
-  const store = stores[id - 1]
+  const store = storeList.value[id - 1]
   if (store) selectStore(store)
 }
 
@@ -414,6 +441,34 @@ function openCampusMap() {
     name: campusName,
     scale: 17,
   })
+}
+
+function startAutoRefresh() {
+  refreshTimer = setInterval(() => {
+    refreshMapData()
+  }, 10000)
+}
+
+function stopAutoRefresh() {
+  if (!refreshTimer) return
+  clearInterval(refreshTimer)
+  refreshTimer = null
+}
+
+async function refreshMapData() {
+  try {
+    const [remoteStores, remoteScooters] = await Promise.all([fetchRemoteStores(), fetchRemoteScooters()])
+    if (Array.isArray(remoteStores) && remoteStores.length) storeList.value = remoteStores
+    if (Array.isArray(remoteScooters) && remoteScooters.length) scooterList.value = remoteScooters
+    if (!storeList.value.some((item) => item.id === activeStoreId.value)) {
+      activeStoreId.value = storeList.value[0]?.id || ''
+    }
+    // #ifdef H5
+    refreshAmapMarkers()
+    // #endif
+  } catch (error) {
+    console.warn('Map data refresh failed:', error)
+  }
 }
 </script>
 
@@ -443,8 +498,23 @@ function openCampusMap() {
   height: 100%;
 }
 
+.amap-container {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.amap-container.ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .fallback-map {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   overflow: hidden;
   background:
     radial-gradient(circle at 52% 42%, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 26%),
@@ -680,6 +750,22 @@ function openCampusMap() {
   box-shadow: 0 12rpx 28rpx rgba(15, 23, 42, 0.12);
 }
 
+.map-error-badge {
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  top: 24rpx;
+  z-index: 6;
+  padding: 16rpx 20rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 247, 237, 0.96);
+  color: #b45309;
+  font-size: 22rpx;
+  font-weight: 800;
+  line-height: 1.35;
+  box-shadow: 0 12rpx 28rpx rgba(120, 53, 15, 0.12);
+}
+
 .station-tabs {
   position: relative;
   z-index: 6;
@@ -828,10 +914,11 @@ function openCampusMap() {
 }
 
 :global(.amap-pin) {
-  min-width: 36px;
-  height: 36px;
+  position: relative;
+  min-width: 34px;
+  height: 34px;
   padding: 0 8px;
-  border: 3px solid #fff;
+  border: 2px solid #fff;
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -839,27 +926,84 @@ function openCampusMap() {
   color: #fff;
   font-size: 12px;
   font-weight: 900;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+  letter-spacing: 0.2px;
+  box-shadow:
+    0 10px 24px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+:global(.amap-pin::after) {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: translateX(-50%) rotate(45deg);
+  border-bottom-right-radius: 2px;
   box-sizing: border-box;
 }
 
 :global(.amap-pin--store) {
-  background: #0f766e;
+  background: linear-gradient(145deg, #16947f, #0f766e);
 }
 
 :global(.amap-pin--active) {
-  background: #063f3c;
-  transform: scale(1.1);
+  background: linear-gradient(145deg, #0f766e, #0a5f56);
+  transform: scale(1.08);
+  box-shadow:
+    0 12px 26px rgba(8, 117, 98, 0.35),
+    0 0 0 2px rgba(16, 185, 129, 0.26);
 }
 
 :global(.amap-pin--scooter) {
-  min-width: 34px;
-  height: 34px;
-  background: #2563eb;
+  min-width: 30px;
+  height: 30px;
+  font-size: 11px;
+  background: linear-gradient(145deg, #4f82ff, #2563eb);
+}
+
+:global(.amap-pin--scooter::after) {
+  display: none;
 }
 
 :global(.amap-pin--me) {
-  background: #111827;
+  min-width: 36px;
+  height: 36px;
+  background: linear-gradient(145deg, #222b3d, #111827);
+}
+
+:global(.amap-pin--me::after) {
+  display: none;
+}
+
+:global(.amap-pin--me::before) {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  border: 2px solid rgba(17, 24, 39, 0.28);
+  animation: me-ping 2s ease-out infinite;
+}
+
+@keyframes me-ping {
+  0% {
+    transform: scale(0.88);
+    opacity: 0.52;
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
 }
 
 @media screen and (min-width: 960px) {

@@ -151,13 +151,25 @@ function openStore(store) {
   openLocation({
     latitude: store.latitude,
     longitude: store.longitude,
-    name: store.name,
-    address: store.address,
+    name: storeName(store),
+    address: storeAddress(store),
   })
 }
 
 function storeName(store) {
-  if (lang.value !== 'en') return store.name
+  const zhById = {
+    'st-01': '犀安路北门站',
+    'st-02': '图书馆广场站',
+    'st-03': '交大兴业北街站',
+    'st-04': '南区生活广场站',
+  }
+  const zhByEnName = {
+    'North Gate Station': '犀安路北门站',
+    'Library Square Station': '图书馆广场站',
+    'Metro Station Exit': '交大兴业北街站',
+    'South Area Station': '南区生活广场站',
+  }
+  if (lang.value !== 'en') return zhById[store.id] || zhByEnName[store.name] || store.name
   return {
     'st-01': 'Xian Road North Gate',
     'st-02': 'Library Plaza',

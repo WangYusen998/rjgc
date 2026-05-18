@@ -135,7 +135,7 @@ import {
   scooterModels,
   statusText,
 } from '../../data/mock'
-import { createRemoteBooking } from '../../data/mock'
+import { createRemoteBooking, fetchRemoteScooters } from '../../data/mock'
 import { getLang, setNavTitle, translateValue } from '../../data/i18n'
 import { scanCode } from '../../data/platform'
 import { requireLogin } from '../../data/authGuard'
@@ -150,6 +150,7 @@ const user = ref(null)
 const selectedPayment = ref('模拟钱包')
 const agreeSafety = ref(false)
 const agreeDeduction = ref(false)
+const remoteScooters = ref([])
 const isEn = computed(() => getLang() === 'en')
 
 const model = computed(() => getScooterModel(selectedModel.value))
@@ -179,11 +180,20 @@ const total = computed(() => {
   return (base + deposit + (insurance.value ? 2 : 0)).toFixed(2)
 })
 
-onLoad((query) => {
+onLoad(async (query) => {
   setNavTitle('预约用车', 'Book Scooter')
   user.value = getCurrentUser()
   const id = query.scooterId || decodeURIComponent(query.code || '')
   scooter.value = getScooter(id) || getAvailableScooters()[0]
+  try {
+    const list = await fetchRemoteScooters()
+    if (Array.isArray(list) && list.length) {
+      remoteScooters.value = list
+      scooter.value = list.find((item) => item.id === id || item.qr === id) || list.find((item) => item.status === 'available') || scooter.value
+    }
+  } catch {
+    remoteScooters.value = []
+  }
   if (scooter.value) selectedModel.value = scooter.value.model
   if (user.value?.bankCardLast4) selectedPayment.value = `${isEn.value ? 'China bank card' : user.value.bankName || '中国银行卡'} ****${user.value.bankCardLast4}`
   if (user.value?.cardLast4) selectedPayment.value = `Credit Card ****${user.value.cardLast4}`
@@ -191,7 +201,8 @@ onLoad((query) => {
 
 function selectModel(modelItem) {
   selectedModel.value = modelItem.id
-  const match = getAvailableScooters().find((item) => item.model === modelItem.id)
+  const source = remoteScooters.value.length ? remoteScooters.value : getAvailableScooters()
+  const match = source.find((item) => item.model === modelItem.id && item.status === 'available')
   if (match) scooter.value = match
 }
 
