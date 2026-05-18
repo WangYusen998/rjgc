@@ -1,0 +1,152 @@
+{
+  "pages": [
+    {
+      "path": "pages/language/index",
+      "style": {
+        "navigationBarTitleText": "Language"
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "SwiftRide"
+      }
+    },
+    {
+      "path": "pages/scooters/index",
+      "style": {
+        "navigationBarTitleText": "附近车辆"
+      }
+    },
+    {
+      "path": "pages/map/index",
+      "style": {
+        "navigationBarTitleText": "校园地图"
+      }
+    },
+    {
+      "path": "pages/bookings/index",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/auth/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/auth/forgot",
+      "style": {
+        "navigationBarTitleText": "找回账号/密码"
+      }
+    },
+    {
+      "path": "pages/booking/index",
+      "style": {
+        "navigationBarTitleText": "预约用车"
+      }
+    },
+    {
+      "path": "pages/scooters/detail",
+      "style": {
+        "navigationBarTitleText": "车辆详情"
+      }
+    },
+    {
+      "path": "pages/scooters/viewer",
+      "style": {
+        "navigationBarTitleText": "3D 车型"
+      }
+    },
+    {
+      "path": "pages/bookings/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/feedback/index",
+      "style": {
+        "navigationBarTitleText": "问题反馈"
+      }
+    },
+    {
+      "path": "pages/operations/index",
+      "style": {
+        "navigationBarTitleText": "后台运营"
+      }
+    },
+    {
+      "path": "pages/safety/index",
+      "style": {
+        "navigationBarTitleText": "安全责任"
+      }
+    },
+    {
+      "path": "pages/admin/login",
+      "style": {
+        "navigationBarTitleText": "管理员登录"
+      }
+    },
+    {
+      "path": "pages/admin/index",
+      "style": {
+        "navigationBarTitleText": "管理员系统"
+      }
+    },
+    {
+      "path": "pages/admin/module",
+      "style": {
+        "navigationBarTitleText": "管理模块"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "SwiftRide",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fb"
+  },
+  "tabBar": {
+    "color": "#687083",
+    "selectedColor": "#101114",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/scooters/index",
+        "text": "车辆"
+      },
+      {
+        "pagePath": "pages/map/index",
+        "text": "地图"
+      },
+      {
+        "pagePath": "pages/bookings/index",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  }
+}
