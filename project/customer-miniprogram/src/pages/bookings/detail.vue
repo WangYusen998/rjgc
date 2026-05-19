@@ -106,8 +106,16 @@
         <button class="ghost-btn danger-btn" @tap="cancel">{{ isEn ? 'Cancel Order' : '取消订单' }}</button>
       </view>
 
-      <view class="actions" v-else-if="false">
+      <view class="actions" v-else-if="booking.status === 'returned'">
         <view class="payment-box">
+          <text class="settled-title">{{ isEn ? 'Return Check Completed' : '还车检查完成' }}</text>
+          <text class="muted">
+            {{
+              isEn
+                ? `Please confirm the final amount ${booking.total} CNY and complete payment.`
+                : `请确认最终金额 ${booking.total} 元，并完成付款。`
+            }}
+          </text>
           <text class="label">{{ isEn ? 'Payment method' : '付款方式' }}</text>
           <view class="payment-grid">
             <button
@@ -135,10 +143,10 @@
         <button :class="['primary-btn', canPay ? '' : 'disabled-btn']" @tap="pay">{{ isEn ? 'Confirm Agreements and Mock Pay' : '确认协议并模拟支付' }}</button>
       </view>
 
-      <view class="actions" v-else-if="booking.status === 'returned'">
+      <view class="actions" v-else-if="booking.status === 'paid'">
         <view class="settled-box">
-          <text class="settled-title">{{ isEn ? 'Return Completed' : '还车已完成' }}</text>
-          <text class="muted">{{ isEn ? 'No overdue, damage, dispatch, or battery difference fee is due.' : '本次无超时费、损坏赔偿、异地调度费和电费差额，无需再次付款。' }}</text>
+          <text class="settled-title">{{ isEn ? 'Order Completed' : '订单已完成' }}</text>
+          <text class="muted">{{ isEn ? 'The return check and payment have both been completed.' : '还车检查和付款均已完成。' }}</text>
         </view>
       </view>
     </view>
@@ -151,11 +159,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import {
   bookingStatusText,
   canReturnAt,
-  cancelBooking,
-  extendBooking,
-  finishReturn,
   getCurrentUser,
-  mockPayBooking,
   readBookings,
 } from '../../data/mock'
 import { fetchRemoteBookings, updateRemoteBooking } from '../../data/mock'
@@ -195,6 +199,16 @@ const extraFeeTotal = computed(() =>
   ),
 )
 
+function showMissingBookingModal() {
+  uni.showModal({
+    title: isEn.value ? 'Order Unavailable' : '订单不可用',
+    content: isEn.value
+      ? 'This order no longer exists or has expired. Please return to the order list and refresh.'
+      : '该订单不存在或已失效，请返回订单列表刷新后重试。',
+    showCancel: false,
+  })
+}
+
 onLoad(async (query) => {
   user.value = getCurrentUser()
   if (!user.value?.account) {
@@ -211,24 +225,41 @@ onLoad(async (query) => {
     return
   }
 
-  booking.value = readBookings().find((item) => item.id === query.id && item.account === user.value.account)
+  const localBooking = readBookings().find((item) => item.id === query.id && item.account === user.value.account)
+  booking.value = localBooking
   try {
     const remoteBookings = await fetchRemoteBookings(user.value.account)
     const remoteBooking = Array.isArray(remoteBookings) ? remoteBookings.find((item) => item.id === query.id) : null
-    if (remoteBooking) booking.value = remoteBooking
+    if (remoteBooking) {
+      booking.value = remoteBooking
+    } else {
+      booking.value = null
+      showMissingBookingModal()
+      return
+    }
   } catch {
-    booking.value = readBookings().find((item) => item.id === query.id && item.account === user.value.account)
+    booking.value = localBooking
+  }
+
+  if (!booking.value) {
+    showMissingBookingModal()
+    return
   }
 
   if (user.value?.bankCardLast4) selectedPayment.value = `${user.value.bankName || '中国银行卡'} ****${user.value.bankCardLast4}`
   if (user.value?.cardLast4) selectedPayment.value = `Credit Card ****${user.value.cardLast4}`
 })
 
-async function persistBookingPatch(patch, localFallback) {
+async function persistBookingPatch(patch) {
   try {
     booking.value = await updateRemoteBooking(booking.value.id, patch)
-  } catch {
-    booking.value = localFallback()
+  } catch (error) {
+    uni.showModal({
+      title: isEn.value ? 'Operation Failed' : '操作失败',
+      content: error.message || (isEn.value ? 'The backend is unavailable. Please try again later.' : '后端服务不可用，请稍后重试。'),
+      showCancel: false,
+    })
+    return null
   }
   return booking.value
 }
@@ -236,14 +267,14 @@ async function persistBookingPatch(patch, localFallback) {
 async function extend() {
   const nextMinutes = Number(booking.value.minutes || 0) + 15
   const extraFee = 18
-  await persistBookingPatch(
+  const updated = await persistBookingPatch(
     {
       minutes: nextMinutes,
       total: Number((Number(booking.value.total || 0) + extraFee).toFixed(2)),
       lastAction: `已延期 15 分钟，追加 ${extraFee} 元`,
     },
-    () => extendBooking(booking.value.id, 15),
   )
+  if (!updated) return
   uni.showToast({ title: isEn.value ? 'Extended' : '已延期', icon: 'success' })
 }
 
@@ -256,22 +287,18 @@ function onDeductionAgreementChange(event) {
 }
 
 async function pay() {
-  if (booking.value?.status === 'returned' && extraFeeTotal.value <= 0) {
-    uni.showToast({ title: isEn.value ? 'No extra fee due' : '无需补缴费用', icon: 'none' })
-    return
-  }
   if (!canPay.value) {
     uni.showToast({ title: isEn.value ? 'Choose payment and check both agreements' : '请先选择付款方式并勾选两个安全协议', icon: 'none' })
     return
   }
-  await persistBookingPatch(
+  const updated = await persistBookingPatch(
     {
-      status: booking.value.status === 'returned' ? 'returned' : 'paid',
+      status: 'paid',
       paymentMethod: selectedPayment.value,
       lastAction: `模拟支付成功，支付方式：${selectedPayment.value}`,
     },
-    () => mockPayBooking(booking.value.id, selectedPayment.value),
   )
+  if (!updated) return
   uni.showModal({
     title: isEn.value ? 'Mock Payment Successful' : '模拟支付成功',
     content: isEn.value
@@ -281,21 +308,59 @@ async function pay() {
   })
 }
 
-function returnByApp() {
-  uni.getLocation({
-    type: 'gcj02',
-    success: (res) => {
-      checkReturnLocation({ latitude: res.latitude, longitude: res.longitude })
-    },
-    fail: () => {
-      const demoResult = canReturnAt(null, booking.value.returnZoneId)
-      checkReturnLocation({
-        latitude: demoResult.zone.latitude,
-        longitude: demoResult.zone.longitude,
+function getCurrentLocation() {
+  const getBrowserLocation = (options) =>
+    new Promise((resolve, reject) => {
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        reject(new Error('Browser geolocation is not available'))
+        return
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          })
+        },
+        reject,
+        options,
+      )
+    })
+
+  const getUniLocation = () =>
+    new Promise((resolve, reject) => {
+      uni.getLocation({
+        type: 'gcj02',
+        isHighAccuracy: true,
+        success: (res) => {
+          resolve({ latitude: res.latitude, longitude: res.longitude })
+        },
+        fail: reject,
       })
-      uni.showToast({ title: isEn.value ? 'Using demo return zone' : '已使用演示还车区定位', icon: 'none' })
-    },
-  })
+    })
+
+  if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    return getBrowserLocation({ enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }).catch(() =>
+      getBrowserLocation({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }).catch(getUniLocation),
+    )
+  }
+
+  return getUniLocation()
+}
+
+async function returnByApp() {
+  try {
+    const location = await getCurrentLocation()
+    checkReturnLocation(location)
+  } catch {
+    uni.showModal({
+      title: isEn.value ? 'Location Required' : '需要当前位置',
+      content: isEn.value
+        ? 'Unable to get your current location. Please enable location permission and try again.'
+        : '无法获取当前位置，请开启定位权限后重试。',
+      showCancel: false,
+    })
+  }
 }
 
 function checkReturnLocation(location) {
@@ -327,7 +392,7 @@ async function completeReturn(outOfZone, zoneName) {
   const dispatchFee = outOfZone ? 10 : 0
   const total = Number((Number(booking.value.total || 0) + batteryFee + overdueFee + dispatchFee).toFixed(2))
 
-  await persistBookingPatch(
+  const updated = await persistBookingPatch(
     {
       status: 'returned',
       endBattery: endBatteryValue,
@@ -341,25 +406,18 @@ async function completeReturn(outOfZone, zoneName) {
       total,
       lastAction: outOfZone ? '未在指定还车区还车，已加收 10 元调度费。' : '已在指定还车区完成还车检查。',
     },
-    () =>
-      finishReturn(booking.value.id, {
-        endBattery: endBattery.value,
-        endMileage: endMileage.value,
-        damageReport: damageReport.value,
-        overdue: overdue.value,
-        outOfZone,
-      }),
   )
+  if (!updated) return
 
   uni.showModal({
-    title: isEn.value ? 'Return Completed' : '还车完成',
+    title: isEn.value ? 'Return Check Completed' : '还车检查完成',
     content: outOfZone
       ? isEn.value
-        ? `Returned out of zone with a 10 CNY dispatch fee. Final amount ${booking.value.total} CNY.`
-        : `已异地还车并加收 10 元调度费，最终金额 ${booking.value.total} 元。`
+        ? `Returned out of zone with a 10 CNY dispatch fee. Please complete payment for ${booking.value.total} CNY.`
+        : `已异地还车并加收 10 元调度费，请继续支付最终金额 ${booking.value.total} 元。`
       : isEn.value
-        ? `Return-zone check passed. Final amount ${booking.value.total} CNY.`
-        : `已通过 ${zoneName} 位置检查，最终金额 ${booking.value.total} 元。`,
+        ? `Return-zone check passed. Please complete payment for ${booking.value.total} CNY.`
+        : `已通过 ${zoneName} 位置检查，请继续支付最终金额 ${booking.value.total} 元。`,
     showCancel: false,
   })
 }
@@ -368,15 +426,15 @@ function cancel() {
   uni.showModal({
     title: isEn.value ? 'Cancel Order' : '取消订单',
     content: isEn.value ? 'Cancelling will release the scooter. Continue?' : '取消后会释放车辆并记录取消状态，确认继续？',
-    success: (res) => {
+    success: async (res) => {
       if (!res.confirm) return
-      persistBookingPatch(
+      const updated = await persistBookingPatch(
         {
           status: 'cancelled',
           lastAction: '用户取消订单，车辆重新锁定并释放库存。',
         },
-        () => cancelBooking(booking.value.id),
       )
+      if (!updated) return
       uni.showToast({ title: isEn.value ? 'Cancelled' : '已取消', icon: 'none' })
     },
   })

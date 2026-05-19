@@ -102,7 +102,7 @@ CREATE TABLE issues (
   scooter_id INT NULL,
   type VARCHAR(40) NOT NULL DEFAULT '其他',
   message TEXT NOT NULL,
-  priority ENUM('低', '中', '高') NOT NULL DEFAULT '中',
+  priority ENUM('low', 'medium', 'high') NOT NULL DEFAULT 'medium',
   status VARCHAR(40) NOT NULL DEFAULT '待处理',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
@@ -147,5 +147,5 @@ VALUES
 
 INSERT INTO issues (code, user_id, scooter_id, type, message, priority, status)
 VALUES
-  ('ISS240501', 2, 3, '车辆损坏', '头盔缺失，用户预约时无法正常使用。', '高', '待处理'),
-  ('ISS240502', 2, 5, '低电量', '车辆电量低，需要安排回收充电。', '中', '处理中');
+  ('ISS240501', 2, 3, '车辆损坏', '头盔缺失，用户预约时无法正常使用。', 'high', '待处理'),
+  ('ISS240502', 2, 5, '低电量', '车辆电量低，需要安排回收充电。', 'medium', '处理中');

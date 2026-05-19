@@ -23,7 +23,7 @@
 <script setup>
 import { computed, reactive } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { loginUser, syncSessionUser } from '../../data/mock'
+import { syncSessionUser } from '../../data/mock'
 import { remoteLogin } from '../../data/mock'
 import { getLang, setNavTitle } from '../../data/i18n'
 
@@ -34,16 +34,12 @@ onShow(() => setNavTitle('登录', 'Log In'))
 
 async function submit() {
   try {
-    try {
-      const result = await remoteLogin(form)
-      syncSessionUser(result.user)
-    } catch {
-      loginUser(form)
-    }
+    const result = await remoteLogin(form)
+    syncSessionUser(result.user)
     uni.showToast({ title: isEn.value ? 'Logged in' : '登录成功', icon: 'success' })
     setTimeout(() => uni.switchTab({ url: '/pages/profile/index' }), 400)
   } catch (error) {
-    uni.showToast({ title: error.message, icon: 'none' })
+    uni.showToast({ title: error.message || (isEn.value ? 'Login failed' : '登录失败'), icon: 'none' })
   }
 }
 

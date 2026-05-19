@@ -1,10 +1,13 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const root = process.cwd()
 const outDir = path.join(root, 'dist', 'build', 'h5')
 const indexPath = path.join(outDir, 'index.html')
 const iconDir = path.join(outDir, 'icons')
+const publicAmapConfigPath = path.join(root, 'public', 'amap-config.json')
+const outAmapConfigPath = path.join(outDir, 'amap-config.json')
+const cacheVersion = `swiftride-pwa-${Date.now()}`
 
 const manifest = {
   name: 'SwiftRide',
@@ -30,11 +33,15 @@ const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <path d="M122 174h116" stroke="#86efac" stroke-width="38" stroke-linecap="round"/>
 </svg>`
 
-const sw = `const CACHE_NAME = 'swiftride-pwa-v16';
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon.svg'];
+const sw = `const CACHE_NAME = '${cacheVersion}';
+const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon.svg', '/amap-config.json'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(APP_SHELL.map((url) => cache.add(url).catch(() => undefined))),
+    ),
+  );
   self.skipWaiting();
 });
 
@@ -79,23 +86,41 @@ await mkdir(iconDir, { recursive: true })
 await writeFile(path.join(outDir, 'manifest.webmanifest'), JSON.stringify(manifest, null, 2))
 await writeFile(path.join(iconDir, 'icon.svg'), iconSvg)
 await writeFile(path.join(outDir, 'sw.js'), sw)
+try {
+  await copyFile(publicAmapConfigPath, outAmapConfigPath)
+} catch {
+  // The map page already falls back to the illustrated campus map when no runtime config exists.
+}
 
 let html = await readFile(indexPath, 'utf8')
-const head = `<!DOCTYPE html>
+const pwaHeadTags = [
+  '<meta name="theme-color" content="#0f766e" />',
+  '<meta name="mobile-web-app-capable" content="yes" />',
+  '<meta name="apple-mobile-web-app-capable" content="yes" />',
+  '<meta name="apple-mobile-web-app-title" content="SwiftRide" />',
+  '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
+  '<link rel="manifest" href="/manifest.webmanifest" />',
+  '<link rel="icon" href="/icons/icon.svg" />',
+  '<link rel="apple-touch-icon" href="/icons/icon.svg" />',
+]
+
+const serviceWorkerScript = `    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+        });
+      }
+    </script>`
+
+if (!html.includes('<html')) {
+  const head = `<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f766e" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="SwiftRide" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icons/icon.svg" />
+    ${pwaHeadTags.join('\n    ')}
     <title>SwiftRide</title>
 `
-
-if (!html.includes('<html')) {
   const lines = html.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
   const headTags = lines.filter((line) => line.startsWith('<script ') || line.startsWith('<link rel="stylesheet"'))
   const bodyTags = lines.filter((line) => !headTags.includes(line))
@@ -104,16 +129,21 @@ if (!html.includes('<html')) {
   </head>
   <body>
 ${bodyTags.join('\n')}
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
-      }
-    </script>
+${serviceWorkerScript}
   </body>
 </html>
 `
-} else if (!html.includes('manifest.webmanifest')) {
-  html = html.replace('</head>', `    <link rel="manifest" href="/manifest.webmanifest" />\n    <meta name="theme-color" content="#0f766e" />\n  </head>`)
+} else {
+  for (const tag of pwaHeadTags) {
+    const name = tag.match(/name="([^"]+)"/)?.[1]
+    const rel = tag.match(/rel="([^"]+)"/)?.[1]
+    const marker = name ? `name="${name}"` : rel ? `rel="${rel}"` : tag
+    if (marker && html.includes(marker)) continue
+    html = html.replace('</head>', `    ${tag}\n  </head>`)
+  }
+  if (!html.includes("navigator.serviceWorker.register('/sw.js')")) {
+    html = html.replace('</body>', `${serviceWorkerScript}\n  </body>`)
+  }
 }
 
 await writeFile(indexPath, html)

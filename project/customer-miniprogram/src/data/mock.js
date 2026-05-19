@@ -284,8 +284,8 @@ export function statusText(status) {
 }
 
 export function bookingStatusText(status) {
-  const zh = { ongoing: '进行中', paid: '已完成', returned: '已还车', cancelled: '已取消', overdue: '已超时' }
-  const en = { ongoing: 'Ongoing', paid: 'Paid', returned: 'Returned', cancelled: 'Cancelled', overdue: 'Overdue' }
+  const zh = { ongoing: '进行中', paid: '已完成', returned: '已还车待支付', cancelled: '已取消', overdue: '已超时' }
+  const en = { ongoing: 'Ongoing', paid: 'Completed', returned: 'Returned, pending payment', cancelled: 'Cancelled', overdue: 'Overdue' }
   return (isEnglish() ? en : zh)[status] || status
 }
 
@@ -802,8 +802,11 @@ export function mockPayBooking(id, selectedMethod = '') {
   })
 }
 
-export function activeBooking() {
-  return readBookings().find((booking) => booking.status === 'ongoing') || null
+export function activeBooking(account = '') {
+  const currentStatuses = ['ongoing', 'overdue', 'returned']
+  return readBookings().find((booking) =>
+    currentStatuses.includes(booking.status) && (!account || booking.account === account),
+  ) || null
 }
 
 export function seedBookings() {
@@ -977,8 +980,8 @@ export function adminDashboard() {
   }
 }
 
-export function adminModuleMeta() {
-  const data = adminDashboard()
+export function adminModuleMeta(source) {
+  const data = source || adminDashboard()
   return [
     { type: 'overview', title: '运营总览', desc: '系统使用情况、车辆可用率、订单概览', count: data.usage.activeOrders },
     { type: 'users', title: '用户记录', desc: '注册账号、实名/银行卡信息、高频用户', count: data.users.length },
@@ -1025,15 +1028,12 @@ export function getSafetyClauses() {
 }
 
 const API_BASE_KEY = 'swiftride_api_base'
-const DEFAULT_API_BASE = typeof window === 'undefined' ? 'http://127.0.0.1:8081/api' : `${window.location.origin}/api`
+const ENV_API_BASE = import.meta.env.VITE_API_BASE_URL
+const DEFAULT_API_BASE = ENV_API_BASE || (typeof window === 'undefined' ? 'http://127.0.0.1:8081/api' : `${window.location.origin}/api`)
 
 export function getApiBase() {
+  if (ENV_API_BASE) return ENV_API_BASE
   const saved = uni.getStorageSync(API_BASE_KEY)
-  if (saved && typeof window !== 'undefined' && /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/api\/?$/.test(saved)) {
-    const fixed = `${window.location.origin}/api`
-    uni.setStorageSync(API_BASE_KEY, fixed)
-    return fixed
-  }
   return saved || DEFAULT_API_BASE
 }
 

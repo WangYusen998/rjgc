@@ -3,6 +3,19 @@ import { query } from '../config/db.js'
 
 const router = express.Router()
 
+function normalizePriority(priority, fallback = 'medium') {
+  const map = {
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    低: 'low',
+    中: 'medium',
+    高: 'high',
+  }
+  const value = map[String(priority ?? '').trim().toLowerCase()]
+  return value || fallback
+}
+
 function rowToIssue(row) {
   return {
     id: row.code,
@@ -34,12 +47,13 @@ router.get('/', async (_req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const { account = 'guest', scooterId = '', type = '其他', message = '', priority = '中' } = req.body
+    const normalizedPriority = normalizePriority(priority)
     const users = await query('SELECT id FROM users WHERE account = ? LIMIT 1', [account])
     const scooters = scooterId ? await query('SELECT id FROM scooters WHERE code = ? LIMIT 1', [scooterId]) : []
     const code = `ISS${Date.now().toString().slice(-8)}`
     await query(
       'INSERT INTO issues (code, user_id, scooter_id, type, message, priority, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [code, users[0]?.id || 2, scooters[0]?.id || null, type, message, priority, '待处理'],
+      [code, users[0]?.id || 2, scooters[0]?.id || null, type, message, normalizedPriority, '待处理'],
     )
     const rows = await query(
       `SELECT i.*, DATE_FORMAT(i.created_at, '%Y-%m-%d %H:%i') AS created_at_text, u.account, s.code AS scooter_code
@@ -58,8 +72,12 @@ router.post('/', async (req, res, next) => {
 router.patch('/:code', async (req, res, next) => {
   try {
     const patch = req.body || {}
+    const priority = patch.priority == null ? null : normalizePriority(patch.priority, null)
+    if (patch.priority != null && priority == null) {
+      return res.status(400).json({ message: '优先级必须是 high、medium、low 或 高、中、低' })
+    }
     await query('UPDATE issues SET priority = COALESCE(?, priority), status = COALESCE(?, status) WHERE code = ?', [
-      patch.priority ?? null,
+      priority,
       patch.status ?? null,
       req.params.code,
     ])
@@ -70,4 +88,3 @@ router.patch('/:code', async (req, res, next) => {
 })
 
 export default router
-

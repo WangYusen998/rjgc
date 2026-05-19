@@ -74,8 +74,8 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { activeBooking, getAvailableScooters, seedBookings, stores } from '../../data/mock'
-import { fetchRemoteScooters, fetchRemoteStores } from '../../data/mock'
+import { activeBooking, getAvailableScooters, getCurrentUser, seedBookings, stores } from '../../data/mock'
+import { fetchRemoteBookings, fetchRemoteScooters, fetchRemoteStores } from '../../data/mock'
 import { currentCopy, ensureLanguage, getLang } from '../../data/i18n'
 import { openLocation, scanCode } from '../../data/platform'
 import { requireLogin } from '../../data/authGuard'
@@ -89,13 +89,21 @@ const L = ref(currentCopy())
 const availableCount = computed(() => available.value.length)
 const recommendedStores = computed(() => storeList.value.slice(0, 3))
 const topScooters = computed(() => available.value.slice(0, 3))
+const currentOrderStatuses = ['ongoing', 'overdue', 'returned']
+
+function findCurrentBooking(bookings = []) {
+  return currentOrderStatuses
+    .map((status) => bookings.find((booking) => booking.status === status))
+    .find(Boolean) || null
+}
 
 onShow(async () => {
   if (!ensureLanguage()) return
   lang.value = getLang() || 'zh'
   L.value = currentCopy()
+  const currentUser = getCurrentUser()
   seedBookings()
-  active.value = activeBooking()
+  active.value = currentUser?.account ? activeBooking(currentUser.account) : null
   available.value = getAvailableScooters()
   try {
     const [remoteStores, remoteScooters] = await Promise.all([fetchRemoteStores(), fetchRemoteScooters()])
@@ -106,6 +114,16 @@ onShow(async () => {
   } catch {
     storeList.value = stores
     available.value = getAvailableScooters()
+  }
+  if (!currentUser?.account) {
+    active.value = null
+    return
+  }
+  try {
+    const remoteBookings = await fetchRemoteBookings(currentUser.account)
+    active.value = Array.isArray(remoteBookings) ? findCurrentBooking(remoteBookings) : null
+  } catch {
+    active.value = activeBooking(currentUser.account)
   }
 })
 

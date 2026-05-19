@@ -6,7 +6,7 @@ const router = express.Router()
 
 const scooterStatuses = new Set(['available', 'reserved', 'charging', 'maintenance'])
 const bookingStatuses = new Set(['ongoing', 'paid', 'returned', 'cancelled', 'overdue'])
-const issuePriorities = new Set(['低', '中', '高'])
+const issuePriorities = new Set(['low', 'medium', 'high'])
 
 function asText(value, fallback = '') {
   return String(value ?? fallback).trim()
@@ -30,8 +30,9 @@ function normalizeBookingStatus(status) {
 }
 
 function normalizePriority(priority) {
-  const map = { low: '低', medium: '中', high: '高', 低: '低', 中: '中', 高: '高' }
-  return issuePriorities.has(map[priority]) ? map[priority] : '中'
+  const map = { low: 'low', medium: 'medium', high: 'high', 低: 'low', 中: 'medium', 高: 'high' }
+  const value = map[String(priority ?? '').trim().toLowerCase()]
+  return issuePriorities.has(value) ? value : 'medium'
 }
 
 async function ensureUser(connection, rawUser = {}) {

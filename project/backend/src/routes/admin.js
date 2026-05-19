@@ -128,8 +128,42 @@ router.delete('/users/:account', async (req, res, next) => {
       if (!user) return { deleted: false, status: 404 }
       if (user.role !== 'customer') return { deleted: false, status: 403 }
 
+      const activeBookings = await connection.execute(
+        `SELECT b.id, b.scooter_id, s.store_id
+         FROM bookings b
+         JOIN scooters s ON s.id = b.scooter_id
+         WHERE b.user_id = ? AND b.status IN ('ongoing', 'overdue', 'reserved')
+         FOR UPDATE`,
+        [user.id],
+      )
+      const affectedScooters = activeBookings[0]
+
       await connection.execute('UPDATE issues SET user_id = NULL WHERE user_id = ?', [user.id])
       await connection.execute('DELETE FROM bookings WHERE user_id = ?', [user.id])
+
+      for (const booking of affectedScooters) {
+        const [[remainingBooking]] = await connection.execute(
+          `SELECT id
+           FROM bookings
+           WHERE scooter_id = ? AND status IN ('ongoing', 'overdue', 'reserved')
+           LIMIT 1`,
+          [booking.scooter_id],
+        )
+        if (!remainingBooking) {
+          await connection.execute("UPDATE scooters SET status = 'available', lock_status = '已上锁' WHERE id = ?", [booking.scooter_id])
+        }
+      }
+
+      const affectedStoreIds = [...new Set(affectedScooters.map((booking) => booking.store_id).filter(Boolean))]
+      for (const storeId of affectedStoreIds) {
+        await connection.execute(
+          `UPDATE stores
+           SET available = (SELECT COUNT(*) FROM scooters WHERE store_id = ? AND status = 'available')
+           WHERE id = ?`,
+          [storeId, storeId],
+        )
+      }
+
       await connection.execute('DELETE FROM users WHERE id = ?', [user.id])
       return { deleted: true, status: 200 }
     })

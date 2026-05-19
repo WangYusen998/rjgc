@@ -354,12 +354,15 @@ onShow(() => {
 })
 
 async function reload() {
-  modules.value = adminModuleMeta()
   dashboard.value = adminDashboard()
+  modules.value = adminModuleMeta(dashboard.value)
   try {
     dashboard.value = await fetchRemoteAdminDashboard()
+    modules.value = adminModuleMeta(dashboard.value)
   } catch {
     dashboard.value = adminDashboard()
+    modules.value = adminModuleMeta(dashboard.value)
+    uni.showToast({ title: '后端连接失败，当前显示离线数据', icon: 'none' })
   }
 }
 

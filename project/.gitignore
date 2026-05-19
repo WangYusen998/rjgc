@@ -6,6 +6,7 @@ dist/
 build/
 .output/
 *.zip
+release/
 
 # Local environment
 .env
@@ -30,6 +31,16 @@ Thumbs.db
 # Debug screenshots
 *debug*.png
 *check*.png
+
+# Local backups and packaged snapshots
+backups/
+customer-miniprogram/project/
+
+# Sprint/demo media kept outside source control
+sprint presentations/video/
+customer-miniprogram/sprint presentations/video/
+*.mp4
+*.mov
 
 # Local database/runtime artifacts
 .mysql-data-*/

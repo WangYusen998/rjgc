@@ -66,8 +66,9 @@ router.post('/', async (req, res, next) => {
     const code = `ORD${Date.now().toString().slice(-8)}`
     const result = await transaction(async (connection) => {
       const [[user]] = await connection.execute('SELECT * FROM users WHERE account = ? LIMIT 1', [body.account || 'student001'])
-      const [[scooter]] = await connection.execute('SELECT * FROM scooters WHERE code = ? LIMIT 1', [body.scooterId])
-      if (!user || !scooter) throw new Error('User or scooter not found')
+      const [[scooter]] = await connection.execute('SELECT * FROM scooters WHERE code = ? LIMIT 1 FOR UPDATE', [body.scooterId])
+      if (!user || !scooter) return { notFound: true }
+      if (scooter.status !== 'available') return { unavailable: true, scooterStatus: scooter.status }
       const minutes = Number(body.minutes || 30)
       const total = Number(body.quotedTotal || (scooter.price_per_minute * minutes + (body.insurance ? 2 : 0))).toFixed(2)
       await connection.execute(
@@ -95,9 +96,11 @@ router.post('/', async (req, res, next) => {
         ],
       )
       await connection.execute("UPDATE scooters SET status = 'reserved', lock_status = '预订锁定' WHERE id = ?", [scooter.id])
-      return code
+      return { code }
     })
-    const rows = await query(`${selectSql} WHERE b.code = ? LIMIT 1`, [result])
+    if (result.notFound) return res.status(404).json({ message: 'User or scooter not found' })
+    if (result.unavailable) return res.status(409).json({ message: 'Scooter is not available', status: result.scooterStatus })
+    const rows = await query(`${selectSql} WHERE b.code = ? LIMIT 1`, [result.code])
     return res.status(201).json(rowToBooking(rows[0]))
   } catch (error) {
     return next(error)
@@ -107,39 +110,52 @@ router.post('/', async (req, res, next) => {
 router.patch('/:code', async (req, res, next) => {
   try {
     const patch = req.body || {}
-    await query(
-      `UPDATE bookings SET
-       status = COALESCE(?, status),
-       minutes = COALESCE(?, minutes),
-       total = COALESCE(?, total),
-       payment_method = COALESCE(?, payment_method),
-       end_battery = COALESCE(?, end_battery),
-       end_mileage = COALESCE(?, end_mileage),
-       damage_report = COALESCE(?, damage_report),
-       overdue_fee = COALESCE(?, overdue_fee),
-       battery_fee = COALESCE(?, battery_fee),
-       dispatch_fee = COALESCE(?, dispatch_fee),
-       return_out_of_zone = COALESCE(?, return_out_of_zone),
-       return_checked = COALESCE(?, return_checked),
-       last_action = COALESCE(?, last_action)
-       WHERE code = ?`,
-      [
-        patch.status ?? null,
-        patch.minutes ?? null,
-        patch.total ?? null,
-        patch.paymentMethod ?? null,
-        patch.endBattery ?? null,
-        patch.endMileage ?? null,
-        patch.damageReport ?? null,
-        patch.overdueFee ?? null,
-        patch.batteryFee ?? null,
-        patch.dispatchFee ?? null,
-        patch.returnOutOfZone === undefined ? null : Number(Boolean(patch.returnOutOfZone)),
-        patch.returnChecked === undefined ? null : Number(Boolean(patch.returnChecked)),
-        patch.lastAction ?? null,
-        req.params.code,
-      ],
-    )
+    const result = await transaction(async (connection) => {
+      const [[booking]] = await connection.execute('SELECT id, scooter_id FROM bookings WHERE code = ? LIMIT 1', [req.params.code])
+      if (!booking) return { found: false }
+
+      await connection.execute(
+        `UPDATE bookings SET
+         status = COALESCE(?, status),
+         minutes = COALESCE(?, minutes),
+         total = COALESCE(?, total),
+         payment_method = COALESCE(?, payment_method),
+         end_battery = COALESCE(?, end_battery),
+         end_mileage = COALESCE(?, end_mileage),
+         damage_report = COALESCE(?, damage_report),
+         overdue_fee = COALESCE(?, overdue_fee),
+         battery_fee = COALESCE(?, battery_fee),
+         dispatch_fee = COALESCE(?, dispatch_fee),
+         return_out_of_zone = COALESCE(?, return_out_of_zone),
+         return_checked = COALESCE(?, return_checked),
+         last_action = COALESCE(?, last_action)
+         WHERE code = ?`,
+        [
+          patch.status ?? null,
+          patch.minutes ?? null,
+          patch.total ?? null,
+          patch.paymentMethod ?? null,
+          patch.endBattery ?? null,
+          patch.endMileage ?? null,
+          patch.damageReport ?? null,
+          patch.overdueFee ?? null,
+          patch.batteryFee ?? null,
+          patch.dispatchFee ?? null,
+          patch.returnOutOfZone === undefined ? null : Number(Boolean(patch.returnOutOfZone)),
+          patch.returnChecked === undefined ? null : Number(Boolean(patch.returnChecked)),
+          patch.lastAction ?? null,
+          req.params.code,
+        ],
+      )
+
+      if (['returned', 'cancelled'].includes(patch.status)) {
+        await connection.execute("UPDATE scooters SET status = 'available', lock_status = '已上锁' WHERE id = ?", [booking.scooter_id])
+      }
+
+      return { found: true }
+    })
+
+    if (!result.found) return res.status(404).json({ message: 'Booking not found' })
     const rows = await query(`${selectSql} WHERE b.code = ? LIMIT 1`, [req.params.code])
     return res.json(rowToBooking(rows[0]))
   } catch (error) {

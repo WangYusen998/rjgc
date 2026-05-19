@@ -369,8 +369,8 @@
           <el-table-column prop="account" label="账号" width="120" />
           <el-table-column label="优先级" width="130">
             <template #default="{ row }">
-              <el-select :model-value="row.priority" @change="(value) => updateIssue(row, { priority: value })">
-                <el-option v-for="level in issuePriorities" :key="level" :label="level" :value="level" />
+              <el-select :model-value="normalizeIssuePriority(row.priority)" @change="(value) => updateIssue(row, { priority: value })">
+                <el-option v-for="level in issuePriorities" :key="level.value" :label="level.label" :value="level.value" />
               </el-select>
             </template>
           </el-table-column>
@@ -386,7 +386,7 @@
           <el-table-column label="操作" min-width="260" fixed="right">
             <template #default="{ row }">
               <div class="table-actions">
-                <el-button size="small" type="danger" plain @click="updateIssue(row, { priority: '高' })">高优先级</el-button>
+                <el-button size="small" type="danger" plain @click="updateIssue(row, { priority: 'high' })">高优先级</el-button>
                 <el-button size="small" @click="updateIssue(row, { status: '处理中' })">开始处理</el-button>
                 <el-button size="small" type="success" @click="updateIssue(row, { status: '已解决' })">标记解决</el-button>
               </div>
@@ -471,7 +471,11 @@ const dashboard = ref({
 
 const scooterStatuses = ['available', 'reserved', 'charging', 'maintenance']
 const issueStatuses = ['待处理', '处理中', '已解决']
-const issuePriorities = ['高', '中', '低']
+const issuePriorities = [
+  { label: '高', value: 'high' },
+  { label: '中', value: 'medium' },
+  { label: '低', value: 'low' },
+]
 
 const users = computed(() => dashboard.value.users || [])
 const stores = computed(() => dashboard.value.stores || [])
@@ -841,6 +845,19 @@ function statusClass(status = '') {
 
 function isResolvedIssue(status = '') {
   return ['已解决', 'resolved'].includes(status)
+}
+
+function normalizeIssuePriority(priority = '') {
+  return (
+    {
+      high: 'high',
+      medium: 'medium',
+      low: 'low',
+      高: 'high',
+      中: 'medium',
+      低: 'low',
+    }[String(priority).trim().toLowerCase()] || 'medium'
+  )
 }
 
 function money(value) {

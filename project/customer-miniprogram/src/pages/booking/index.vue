@@ -125,7 +125,6 @@
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import {
-  createBooking,
   getCurrentUser,
   getScooter,
   getScooterModel,
@@ -326,8 +325,13 @@ async function submit() {
   let booking
   try {
     booking = await createRemoteBooking(payload)
-  } catch {
-    booking = createBooking(payload)
+  } catch (error) {
+    uni.showModal({
+      title: isEn.value ? 'Booking Failed' : '预约失败',
+      content: error.message || (isEn.value ? 'The backend is unavailable. Please try again later.' : '后端服务不可用，请稍后重试。'),
+      showCancel: false,
+    })
+    return
   }
   uni.showModal({
     title: isEn.value ? 'Payment Confirmed and Unlock Sent' : '付款确认并解锁',

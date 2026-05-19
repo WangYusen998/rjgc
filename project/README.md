@@ -1,10 +1,6 @@
 # SwiftRide
 
 SwiftRide 是一个校园共享电动滑板车项目，包含用户端、运营管理端和后端 API。
-用户端网页
-https://goswiftride.xyz
-管理端网页
-https://admin.goswiftride.xyz
 
 ## 目录结构
 
@@ -110,4 +106,12 @@ npm run build -- --base=/admin/
 
 用户端 H5 部署到服务器 Web 根目录；管理后台构建时使用 `/admin/` base 并部署到 Web 根目录的 `admin/` 子目录。
 
+部署前不要提交或上传：
 
+```text
+node_modules/
+dist/
+*.zip
+*.log
+project.private.config.json
+```

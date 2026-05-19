@@ -49,11 +49,14 @@ onShow(async () => {
   }
   admin.value = current
   data.value = adminDashboard()
-  modules.value = adminModuleMeta()
+  modules.value = adminModuleMeta(data.value)
   try {
     data.value = await fetchRemoteAdminDashboard()
+    modules.value = adminModuleMeta(data.value)
   } catch {
     data.value = adminDashboard()
+    modules.value = adminModuleMeta(data.value)
+    uni.showToast({ title: '后端连接失败，当前显示离线数据', icon: 'none' })
   }
 })
 
